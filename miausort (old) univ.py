@@ -1,3 +1,6 @@
+# Old version of miausort. Very memory adaptive, O(log n) space minimum.
+# Based on Timsort and a hybridisation of the block merge procedure seen in Kuvina's YouTube video on the algorithm, grailsort's tagging and holy grailsort's smart block selection sort.
+
 class MiauBlockMerge:
     MIN_RUN = 24
     min_gallop = 7
@@ -726,7 +729,7 @@ class MiauBlockMerge:
             self.block_swap_fw(arr, a, m, len_a)
             return
 
-        if min(len_a, len_b) <= min(self.memory_size, 16): # Bridge rotation (faster than cycle reversal when largely unbalanced, but uses auxiliary space)
+        if min(len_a, len_b) <= min(self.memory_size, 8): # Bridge rotation (faster than cycle reversal when largely unbalanced, but uses auxiliary space)
             tmp = self.external_buffer
             if len_a <= len_b:
                 for i in range(len_a):
@@ -749,7 +752,8 @@ class MiauBlockMerge:
         d = e-1
 
         tmp = 0
-
+        speed = Univ_getSpeed()
+        Univ_setSpeed(speed*2)
         while a < b and c < d: # Cycle reversal rotation (very fast on average)
             tmp = arr[b]
             arr[b] = arr[a]
@@ -776,7 +780,7 @@ class MiauBlockMerge:
             d -= 1
             arr[a] = tmp
             a += 1
-
+        UniV_setSpeed(speed)
         if a < d:
             self.reverse(arr, a, d+1)
 
@@ -953,3 +957,4 @@ def miausort(arr):
     elif mem == -3:
         mem = n//2
     MiauBlockMerge(mem).sort(arr, 0, len(arr))
+
