@@ -1,4 +1,4 @@
-class StacklessMiausort:
+class Miausort:
     minRun = 16
     minGallop = 7
     
@@ -735,5 +735,6 @@ class StacklessMiausort:
         self.lazyStableMerge(arr, start1, mid, end, False)
 
 @Sort("Block Merge Sorts", "Stackless Miausort", "Stackless Miausort")
-def stacklessMiauSort(arr):
-    StacklessMiausort().sort(arr, 0, len(arr))
+def miauSort(arr):
+
+    Miausort().sort(arr, 0, len(arr))
