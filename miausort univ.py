@@ -1,6 +1,7 @@
-class Miausort:
+class MiauSort:
     minRun = 16
     minGallop = 7
+    lastBuffer = 0
     
     def swap(self, arr, a, b):
         arr[a], arr[b] = arr[b], arr[a]
@@ -57,29 +58,25 @@ class Miausort:
             currStart = self.countRunBackward(arr, start, currEnd)
             runLen = currEnd-currStart
             if currStart == start:
-                if currEnd < end and arr[currEnd-1] >= arr[currEnd]:
-                    runs += 1
+                runs += 1
                 break
             
             if runLen < minRun:
                 ext = max(currEnd-minRun, start)
-                self.expSort(arr, ext, currEnd)
-                if currEnd < end and arr[currEnd-1] >= arr[currEnd]:
-                    runs += 1
+                self.expSortBackward(arr, ext, currEnd, currStart)
+                runs += 1
                 currEnd = ext
                 continue
             
             currEnd = currStart+runLen%minRun
-            if currEnd < end and arr[currEnd-1] >= arr[currEnd]:
-                runs += 1
+            runs += 1
             
             if runLen%minRun == 0:
                 continue
             
             ext = max(currEnd-minRun, start)
-            self.expSort(arr, ext, currEnd)
-            if currEnd < end and arr[currEnd-1] >= arr[currEnd]:
-                runs += 1
+            self.expSortBackward(arr, ext, currEnd, currStart)
+            runs += 1
             currEnd = ext
         return runs
     
@@ -153,14 +150,14 @@ class Miausort:
                 lo = m+1
         return lo
     
-    def expSort(self, arr, start, end):
-        speed = UniV_getSpeed()
-        UniV_setSpeed(speed*3)
-        for i in range(start+1, end):
-            self.insert(arr, i, self.expSearchBackward(arr, arr[i], start, i, True))
-        UniV_setSpeed(speed)
+    def expSortBackward(self, arr, start, end, hint):
+        spd = UniV_getSpeed()
+        UniV_setSpeed(spd*3)
+        for i in range(hint-1, start-1, -1):
+            self.insert(arr, i, self.expSearchForward(arr, arr[i], i+1, end, False)-1)
+        UniV_setSpeed(spd)
     
-    def shellsort(self, arr, start, end): # Only used for sorting buffers as they contain all unique values
+    def shellsort(self, arr, start, end): # Only used for sorting buffers since they contain fully distinct values
         gaps = [6148184740, 2769452586, 1427501165, 561937462, 253124983, 114020263, 51360479, 23135351, 10528127, 4697153, 2131981, 973657, 443557, 197803, 89129, 40354, 18118, 8129, 3659, 1636, 701, 301, 132, 57, 23, 10, 4, 1]
 
         n = end-start
@@ -177,38 +174,54 @@ class Miausort:
                     j -= gap
 
                 arr[j] = key
+    
+    def tagSort(self, arr, tagStart, tagCount, midTag): # Just a stable partition - means tags can be sorted in O(sqrt n) :D
+        bufferStart = self.bufferStart
+        currTag = tagStart
+        bufferSwaps = 0
         
-    def smartCollect(self, arr, start, end, target):
+        while currTag < tagStart+tagCount:
+            if arr[currTag] < midTag:
+                if bufferSwaps != 0:
+                    self.swap(arr, currTag, currTag-bufferSwaps)
+            else:
+                self.swap(arr, currTag, bufferStart+bufferSwaps)
+                bufferSwaps += 1
+            currTag += 1
+        self.blockSwapForward(arr, currTag-bufferSwaps, bufferStart, bufferSwaps)
+    
+    def smartCollect(self, arr, start, end, target): # Probably the most complex part of the algorithm :P
         n = end-start
         runSize = self.minRun
         keysStart = start
         keyCount = 0
-        runStart = start+(n%runSize or runSize)-runSize
+        runStart = start
+        runEnd = start+n%runSize # Handling of 'remainder' runs (elements that don't fit in a multiple of minRun)
+        if runEnd == end:
+            runEnd += runSize # First run is a full run if no remainder
+        
         lastRotated = start
-        lastFixed = start
         while runStart < end and keyCount < target:
-            runEnd = min(runStart+runSize, end)
-            currRun = (end-runEnd+runSize-1)//runSize
-            j = max(runStart, start)
+            currRun = (end-runEnd+runSize-1)//runSize # Important calculation
+            j = runStart
             searchStart = keysStart
             while j < runEnd:
                 val = arr[j]
-                pos = self.expSearchForward(arr, val, searchStart, keysStart + keyCount, False)
-                searchStart = pos
+                pos = self.expSearchForward(arr, val, searchStart, keysStart + keyCount, False) # See if the current value at j can be added to keys
+                searchStart = pos # Update to not have to start search from start every time
                 
-                if pos == keysStart+keyCount or arr[pos] != val:
+                if pos == keysStart+keyCount or arr[pos] != val: # Value at j is distinct from keys - can insert
                     self.insert(arr, j, pos)
                     keyCount += 1
                     j += 1
-                
                 else:
                     breakOuter = False
-                    while runStart < end and not breakOuter:
+                    while runStart < end and not breakOuter: # Try to find a value distinct from keys
                         while j < runEnd:
                             val = arr[j]
                             pos = self.expSearchForward(arr, val, searchStart, keysStart+keyCount, False)
                             searchStart = pos
-                            if pos == keysStart+keyCount or arr[pos] != val:
+                            if pos == keysStart+keyCount or arr[pos] != val: # Found - can break
                                 breakOuter = True
                                 break
                             j = self.expSearchForward(arr, arr[pos], j, runEnd, True)
@@ -218,33 +231,33 @@ class Miausort:
                             ofs = j-(keysStart+keyCount)
                             searchStart += ofs
                             keysStart += ofs
-                            lastRotated = min(runEnd+runSize, end)
+                            lastRotated = min(j+runSize, end)
                             break
                         
-                        if keyCount >= runSize and currRun % 2 == 0:
+                        if keyCount >= runSize and currRun % 2 == 0: # Alternatively, move keys to a position where remaining runs can be merged if there are enough
                             self.rotate(arr, keysStart, keysStart+keyCount, min(j,end))
                             ofs = j-(keysStart+keyCount)
                             searchStart += ofs
                             keysStart += ofs
-                            lastRotated = min(runEnd+runSize, end)
+                            lastRotated = min(j+runSize, end)
                             break
                         
                         if j < end:
-                            searchStart = self.expSearchForward(arr, arr[j], keysStart, keysStart+keyCount, False)
+                            searchStart = self.expSearchForward(arr, arr[j], keysStart, keysStart+keyCount, False) # Reset for next run and continue searching
                         
                         runStart = runEnd
                         runEnd = min(runStart+runSize, end)
-                        while runEnd < end and arr[runEnd-1] <= arr[runEnd]:
+                        while runEnd < end and arr[runEnd-1] <= arr[runEnd]: # Find end of the current run (most useful for long sorted sections)
                             runEnd = min(runEnd+runSize, end)
-                        currRun = (end-runEnd+runSize-1)//runSize
+                        currRun = (end-runEnd+runSize-1)//runSize # Recalculate current run from end
                 
-                if keyCount >= target:
+                if keyCount >= target: # Enough found - stop searching
                     break
             
-            if keyCount >= target:
+            if keyCount >= target: # Same as above
                 break
             
-            if keyCount >= runSize and currRun % 2 == 0:
+            if keyCount >= runSize and currRun % 2 == 0: # Enough keys have been collected to increase merge size - both an optimisation and a way to guarantee O(n) worst-case
                 self.bufferStart = keysStart
                 for right in range(end, runEnd, -2*runSize):
                     mid = max(runEnd, right-runSize)
@@ -258,54 +271,26 @@ class Miausort:
                         continue
                     self.mergeBuf(arr, l, mid, r)
                 
-                fixStart = keysStart-runSize+(end-keysStart)%runSize
-                if (end-fixStart+runSize-1)//runSize % 2 != 0:
-                    fixStart -= runSize
-                
-                if fixStart > lastFixed:
-                    self.buildRunsBackward(arr, lastFixed, fixStart)
-                    mergeN = self.minRun
-                    while mergeN < runSize:
-                        for right in range(fixStart, lastFixed, -2*mergeN):
-                            mid = max(lastFixed, right-mergeN)
-                            left = max(lastFixed, right-2*mergeN)
-                            
-                            if left == mid:
-                                break
-                            
-                            skip, l, r = self.checkBounds(arr, left, mid, right)
-                            if skip:
-                                continue
-                            self.mergeBuf(arr, l, mid, r)
-                        mergeN *= 2
-                    lastFixed = fixStart
-                
-                for right in range(lastFixed, start, -2*runSize):
-                    mid = max(start, right-runSize)
-                    left = max(start, right-2*runSize)
-                    
-                    if left == mid:
-                        break
-                    
-                    skip, l, r = self.checkBounds(arr, left, mid, right)
-                    if skip:
-                        continue
-                    self.mergeBuf(arr, l, mid, r)
-                
-                self.shellsort(arr, keysStart, keysStart+runSize)
+                self.shellsort(arr, keysStart, keysStart+self.lastBuffer)
+                self.lastBuffer = 0
                 runSize *= 2
             
             runStart = runEnd
+            runEnd += runSize
         
-        self.rotate(arr, start, keysStart, keysStart+keyCount)
-        lastFixed += keyCount
+        if keyCount >= target: # Enough to use smart tag sorting, so preserve order
+            self.rotate(arr, start, keysStart, keysStart+keyCount)
+        else: # Otherwise, we don't care and scroll keys to start - Faster, but does not preserve order of keys
+            dist = keysStart-start
+            self.blockSwapBackward(arr, keysStart+keyCount, keysStart, dist)
+        
         keysEnd = start+keyCount
-        lastRotated += (end-lastRotated)%runSize
-        self.buildRunsBackward(arr, lastFixed, lastRotated)
+        lastRotated += (end-lastRotated)%runSize # Snap to rightmost run end
+        self.buildRunsBackward(arr, keysEnd, lastRotated)
         
         self.bufferStart = start
         mergeN = self.minRun
-        while mergeN < runSize:
+        while mergeN < runSize: # Fix previously touched runs
             right = lastRotated
             while right > keysEnd:
                 mid = max(keysEnd, right-mergeN)
@@ -322,7 +307,7 @@ class Miausort:
             mergeN *= 2
         
         mergeN = runSize
-        while mergeN < keyCount:
+        while mergeN <= keyCount: # Merge rest of array until no more can fit inside the internal buffer
             right = end
             while right > keysEnd:
                 mid = max(keysEnd, right-mergeN)
@@ -338,10 +323,14 @@ class Miausort:
                 right -= 2*mergeN
             mergeN *= 2
         
-        self.minRun = mergeN//2
+        if keyCount >= target:
+            self.shellsort(arr, start, start+self.lastBuffer)
+            self.lastBuffer = 0
+        
+        self.minRun = max(mergeN//2, runSize)
         return keyCount
     
-    def mergeDecide(self, arr, start, mid, end):
+    def mergeDecide(self, arr, start, mid, end): # Helper
         lenA = mid-start
         lenB = end-mid
         
@@ -352,11 +341,13 @@ class Miausort:
     
     def mergeBuf(self, arr, start, mid, end): # Ensures merge direction matches buffer's capacity
         if mid-start < end-mid:
+            self.lastBuffer = max(self.lastBuffer, mid-start)
             self.mergeBufForward(arr, start, mid, end)
         else:
+            self.lastBuffer = max(self.lastBuffer, end-mid)
             self.mergeBufBackward(arr, start, mid, end)
     
-    def checkBounds(self, arr, start, mid, end):
+    def checkBounds(self, arr, start, mid, end): # Merge optimiser - skips where merges aren't needed and shrinks bounds
         if arr[mid-1] <= arr[mid]:
             return True, start, end
         
@@ -375,7 +366,7 @@ class Miausort:
 
         bufferStart = self.bufferStart
         leftLen = mid-start
-        self.blockSwapForward(arr, start, bufferStart, leftLen) # Move half into buffer
+        self.blockSwapForward(arr, start, bufferStart, leftLen) # Move smaller half into internal buffer
 
         i, j, dest = bufferStart, mid, start
         while i < bufferStart+leftLen and j < end:
@@ -422,7 +413,7 @@ class Miausort:
             dest += 1
 
         self.minGallop = minGallop
-
+    
     def mergeBufBackward(self, arr, start, mid, end): # So you know what I said about the galloping merges? Not so much in this direction.
         minGallop = self.minGallop
         countLeft = countRight = 0
@@ -480,7 +471,7 @@ class Miausort:
         
         self.minGallop = minGallop # Globalise minGallop
     
-    def lazyStableMerge(self, arr, start, mid, end, right):
+    def lazyStableMerge(self, arr, start, mid, end, right): # Implementation from Helium Sort, optimised with exponential searches
         if mid-start < end-mid:
             s = start
             l = mid
@@ -523,16 +514,20 @@ class Miausort:
         
         blockStart = start+remainderA
         
-        self.shellsort(arr, tagsStart, tagsStart+blockCount)
+        if not self.smartTagSort:
+            self.shellsort(arr, tagsStart, tagsStart+blockCount)
         
         midTag = arr[tagsStart+blockCountA]
         
         self.blockSelectSort(arr, blockStart, blockCount, blockLen, blockCountA, midTag)
         self.cleanupBlocks(arr, start, end, blockCount, blockLen, remainderA, remainderB, midTag)
+        
+        if self.smartTagSort:
+            self.tagSort(arr, tagsStart, blockCount, midTag)
     
     def blockSelectSort(self, arr, start, blockCount, blockLen, blockB, midTag):
         tagsStart = self.tagsStart
-        b_end = blockB+1 # Only look at blocks if the min is guaranteed to be here
+        endB = blockB+1 # Only look at blocks if the min is guaranteed to be here
 
         for i in range(blockCount):
             minIdx = i
@@ -542,7 +537,7 @@ class Miausort:
             else:
                 minVal = arr[start+(i+1)*blockLen-1] # Last item of B block
 
-            for j in range(max(blockB,i+1), b_end):
+            for j in range(max(blockB,i+1), endB):
                 if arr[tagsStart+j] < midTag:
                     blockVal = arr[start+j*blockLen]
                 else:
@@ -556,8 +551,8 @@ class Miausort:
                 self.blockSwapForward(arr, start+i*blockLen, start+minIdx*blockLen, blockLen)
                 self.swap(arr, tagsStart+i, tagsStart+minIdx)
 
-                if b_end < blockCount: # Only increase range being checked when a swap has been made
-                    b_end += 1
+                if endB < blockCount and minIdx == endB-1: # Only increment if a swap has been made and the min was at the current end (only works on two sorted subarrays)
+                    endB += 1
     
     def cleanupBlocks(self, arr, start, end, blockCount, blockLen, leftRemainder, rightRemainder, midTag):
         tagsStart = self.tagsStart
@@ -578,7 +573,7 @@ class Miausort:
             last = blockCount-2
         
         i = last
-        while i >= 0: # Doing this backwards is the simplest way to do it stably (I was not about to spend four years learning fragment logic)
+        while i >= 0: # Doing this backwards is the simplest way to do it stably, but is much less performant. Looking to replace this with something more efficient.
             blockStart = blockEnd-blockLen
             if arr[tagsStart+i] < midTag:
                 skip, l, r = self.checkBounds(arr, blockStart, blockEnd, mergeEnd)
@@ -604,7 +599,7 @@ class Miausort:
             self.blockSwapForward(arr, a, m, lenA)
             return
 
-        if lenA == 1: # Mini bridge rotate — temporary and will be replaced with a full bridge rotation when I re-add auxiliary memory
+        if lenA == 1: # Better to replace with auxiliary memory (only 8)
             self.insert(arr, a, e-1)
             return
         
@@ -617,9 +612,8 @@ class Miausort:
         d = e-1
 
         tmp = 0
-        
-        speed = UniV_getSpeed()
-        UniV_setSpeed(speed*2)
+        spd = UniV_getSpeed() # Sequential writes look slower in visualisers even if they're faster in the CPU. Speed up to compensate.
+        UniV_setSpeed(spd*2)
         while a < b and c < d: # Cycle reversal rotation (very fast on average)
             tmp = arr[b]
             arr[b] = arr[a]
@@ -646,18 +640,20 @@ class Miausort:
             d -= 1
             arr[a] = tmp
             a += 1
-        UniV_setSpeed(speed)
+        UniV_setSpeed(spd)
         if a < d:
             self.reverse(arr, a, d+1)
     
     def sort(self, arr, start, end):
         n = end-start
         
-        if n <= 2*self.minRun:
-            self.expSort(arr, start, end)
+        if n <= 2*self.minRun: # Run-aware exponential insertion sort
+            hint = self.countRunBackward(arr, start, end)
+            if hint != start:
+                self.expSortBackward(arr, start, end, hint)
             return
         
-        if self.buildRunsBackward(arr, start, end) < 2:
+        if self.buildRunsBackward(arr, start, end) < 2: # Only one run was found. No need to do anything else, so exit early.
             return
         
         self.blockLen = self.sqrtPow2(n)
@@ -667,25 +663,26 @@ class Miausort:
         
         target = bufferTarget+tagTarget
         keys = self.smartCollect(arr, start, end, target)
-        n -= keys
         if keys >= target:
             self.tagsStart = start
-            self.tags = n//self.blockLen
+            self.tags = tagTarget
             self.bufferStart = self.tagsStart+self.tags
-            self.buffer = self.blockLen
+            self.buffer = bufferTarget
             recheck = False
+            self.smartTagSort = True
         else:
             self.tagsStart = start
-            self.blockLen = max(int((end-start)**0.5), self.blockSize((end-start), keys))
+            self.blockLen = max(int(n**0.5), self.blockSize((end-start), keys))
             self.tags = (2*self.minRun)//self.blockLen
             self.bufferStart = self.tagsStart+self.tags
             self.buffer = keys-self.tags
             recheck = True
+            self.smartTagSort = False
         regionStart = start+keys
         mergeN = self.minRun
         while mergeN < end-regionStart:
             if recheck:
-                self.blockLen = max(int((2*mergeN)**0.5), self.blockSize((2*mergeN), keys-8))
+                self.blockLen = max(int((2*mergeN)**0.5), self.blockSize((2*mergeN), keys))
                 self.tags = (2*mergeN)//self.blockLen
                 if self.tags > keys:
                     self.tags = keys
@@ -705,36 +702,73 @@ class Miausort:
                 if skip:
                     continue
                 
+                if r-mid > self.blockLen:
+                    r += (right-r)%self.blockLen
+                
                 if min(mid-l, r-mid) <= self.blockLen:
                     self.mergeDecide(arr, l, mid, r)
                 else:
-                    
                     self.blockMerge(arr, l, mid, r)
             mergeN *= 2
         
-        self.shellsort(arr, start, start+keys)
+        if self.smartTagSort:
+            self.shellsort(arr, self.bufferStart, self.bufferStart+self.lastBuffer)
+        else:
+            self.shellsort(arr, start, start+keys)
+        
         self.redistBuffer(arr, start, start+keys, end)
     
-    def redistBuffer(self, arr, start, mid, end):
-        rPos = self.expSearchForward(arr, arr[start], mid, end, False)
-        self.rotate(arr, start, mid, rPos)
+    def redistBuffer(self, arr, start, mid, end): # Modified block swap merge - original implementation from https://sortingalgos.miraheze.org/wiki/Rotate_Merge_Sort#Block-Swap_Merge
+        leftLen = mid-start
+        rightLen = end-mid
+        while min(leftLen, rightLen) > 16:
+            leftLen = mid-start
+            rightLen = end-mid
+            
+            if leftLen <= rightLen:
+                if arr[start] > arr[mid+leftLen]:
+                    pos = self.expSearchForward(arr, arr[start], mid+leftLen, end, False)
+                    self.rotate(arr, start, mid, pos)
+                    dist = pos-mid
+                    start += dist+1
+                    mid += dist
+                    leftLen -= 1
+            else:
+                if arr[end-1] < arr[mid-rightLen]:
+                    pos = self.expSearchBackward(arr, arr[end-1], start, mid-rightLen, True)
+                    self.rotate(arr, pos, mid, end)
+                    dist = mid-pos
+                    end -= dist+1
+                    mid -= dist
+                    rightLen -= 1
+            
+            lo = 0
+            hi = min(leftLen, rightLen)
+            while lo < hi:
+                m = (lo+hi)//2
+                if arr[mid-1-m] > arr[mid+m]:
+                    lo = m+1
+                else:
+                    hi = m
+            d = lo
+            
+            self.blockSwapForward(arr, mid-d, mid, d)
+            
+            if leftLen <= rightLen:
+                self.lazyStableMerge(arr, start, mid-d, mid, False)
+                start = mid
+                mid += d
+            else:
+                self.lazyStableMerge(arr, mid, mid+d, end, False)
+                end = mid
+                mid -= d
         
-        dist = rPos-mid
-        start += dist
-        mid += dist
-        
-        start1 = start+(mid-start)//2
-        rPos = self.expSearchForward(arr, arr[start1], mid, end, False)
-        self.rotate(arr, start1, mid, rPos)
-        
-        dist = rPos-mid
-        start1 += dist
-        mid += dist
-        
-        self.lazyStableMerge(arr, start, start1-dist, start1, False)
-        self.lazyStableMerge(arr, start1, mid, end, False)
+        self.lazyStableMerge(arr, start, mid, end, False)
 
-@Sort("Block Merge Sorts", "Stackless Miausort", "Stackless Miausort")
-def miauSort(arr):
+@Sort("Block Merge Sorts", "Miausort", "Miausort")
+def miauSortRun(arr):
+    MiauSort().sort(arr, 0, len(arr))
 
-    Miausort().sort(arr, 0, len(arr))
+@Rotation("Trinity", RotationMode.INDEXED)
+def trinityRotate(arr, start, mid, end):
+    MiauSort().rotate(arr, start, mid, end)
