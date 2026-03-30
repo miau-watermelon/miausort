@@ -9,6 +9,7 @@ In development, but currently has the following features:
 - Rewritten merge as of v3 (from [Adaptive Grail Sort](https://github.com/Gaming32/ArrayV/blob/main/src/main/java/io/github/arrayv/sorts/hybrid/AdaptiveGrailSort.java))
 
 Currently working on:
+- Reimplementing galloping for v3 (this will likely significantly reduce performance on random data, though I will try to prevent this)
 - Porting to more practical languages (Java, C, Rust)
 
 Acknowledgements:
