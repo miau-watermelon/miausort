@@ -1,3 +1,27 @@
+"""
+MIT License
+
+Copyright (c) 2025 miau
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
 class MiauSort:
     minRun = 16
     lastUsed = 0
@@ -92,7 +116,6 @@ class MiauSort:
             arr[a + i] = arr[b + i]
             arr[b + i] = arr[c + i]
             arr[c + i] = tmp
-        
     
     def insertLeft(self, arr, a, b):
         tmp = arr[a]
@@ -100,7 +123,6 @@ class MiauSort:
             arr[a] = arr[a - 1]
             a -= 1
         arr[b] = tmp
-        
     
     def insertRight(self, arr, a, b):
         tmp = arr[a]
@@ -108,11 +130,11 @@ class MiauSort:
             arr[a] = arr[a + 1]
             a += 1
         arr[b] = tmp
-        
     
     def rotate(self, arr, a, m, e): # Trinity rotation
         lenA = m - a
         lenB = e - m
+
         if lenA < 1 or lenB < 1:
             return
         
@@ -123,7 +145,7 @@ class MiauSort:
                 self.insertLeft(arr, e - 1, a)
             return
         
-        if max(lenA, lenB) % min(lenA, lenB) == 0: # Shift if possible
+        if max(lenA, lenB) % min(lenA, lenB) == 0:
             if lenA <= lenB:
                 self.blockSwap(arr, a, m, lenB)
             else:
@@ -133,7 +155,6 @@ class MiauSort:
         b = m - 1
         c = m
         d = e - 1
-        
         
         tmp = 0
         while a < b and c < d: # Cycle reversal rotation (very fast on average)
@@ -155,6 +176,7 @@ class MiauSort:
             a += 1
             arr[d] = tmp
             d -= 1
+        
         while c < d:
             tmp = arr[c]
             arr[c] = arr[d]
@@ -167,23 +189,27 @@ class MiauSort:
         if a < d:
             self.reverse(arr, a, d+1)
     
-    def bSort(self, arr, a, b, h): # Adaptive binary insertion
+    def bSort(self, arr, a, b, h):
         for i in range(h, b):
             if arr[i - 1] > arr[i]:
                 self.insertLeft(arr, i, self.bSearch(arr, arr[i], a, i, False))
     
     def shellsort(self, arr, start, end): # Only used for sorting buffers since they contain fully distinct values
         gaps = [6148184740, 2769452586, 1427501165, 561937462, 253124983, 114020263, 51360479, 23135351, 10528127, 4697153, 2131981, 973657, 443557, 197803, 89129, 40354, 18118, 8129, 3659, 1636, 701, 301, 132, 57, 23, 10, 4, 1]
+
         n = end-start
         for gap in gaps:
             if gap > n:
                 continue
+
             for i in range(start+gap, end):
                 key = arr[i]
                 j = i
+
                 while j >= start+gap and arr[j-gap] > key:
                     arr[j] = arr[j-gap]
                     j -= gap
+
                 arr[j] = key
     
     def scrollMerge(self, arr, p, a, m, left):
@@ -239,7 +265,7 @@ class MiauSort:
         
         self.blockSwap(arr, p, bufPos + a, bLen - a)
     
-    def blockSelectSort(self, arr, a, bCount, bLen, lCount, tags, t): # Smart block selection
+    def blockSelectSort(self, arr, a, bCount, bLen, lCount, tags, t):
         midTag = lCount
         
         k = lCount+1
@@ -277,8 +303,8 @@ class MiauSort:
         rem = lenR & (bLen - 1)
         bCount = countL+countR
         
-        self.triBlockSwap(arr, buf, m - bLen, a, bLen) # Move last left block into buffer and move scratch space to start
-        self.insertRight(arr, t, t + countL - 1) # Update tags accordingly
+        self.triBlockSwap(arr, buf, m - bLen, a, bLen)
+        self.insertRight(arr, t, t + countL - 1)
         
         midTag = self.blockSelectSort(arr, a1, bCount, bLen, countL, arr, t)
         
@@ -297,7 +323,7 @@ class MiauSort:
         
         self.swap(arr, midTag, buf)
         bufSwaps = 1
-        for c in range(midTag + 1, t + bCount): # Tag sorting - stable partition, works since keys remain sorted and are just interweaved
+        for c in range(midTag + 1, t + bCount):
             if arr[c] < arr[buf]:
                 self.swap(arr, c, c - bufSwaps)
             else:
@@ -312,6 +338,7 @@ class MiauSort:
         if m - a <= b - m:
             s = a
             l = m
+
             while s < l and l < b:
                 if left:
                     cmp = arr[s] > arr[l]
@@ -328,6 +355,7 @@ class MiauSort:
         else:
             s = b - 1
             l = m - 1
+
             while s > l and l >= a:
                 if left:
                     cmp = arr[l] > arr[s]
@@ -367,7 +395,7 @@ class MiauSort:
             self.lazyMerge(arr, f, b-rem, b, True)
         
         j = 1
-        for c in range(midTag+1, t + bCount): # Stable partition with insertions
+        for c in range(midTag+1, t + bCount):
             if arr[c] <= arr[midTag]:
                 self.insertLeft(arr, c, midTag)
                 midTag += 1
@@ -490,7 +518,7 @@ class MiauSort:
                     k += 1
                 rP = self.expSearchBW(arr, arr[kP], nxt, rP, False) - 1
             
-            if k >= r: # Merge runs when possible to maintain size balance and progress sort
+            if k >= r:
                 for left in range(a, nxt, 2 * r):
                     mid = left + r
                     right = min(left + 2 * r, nxt)
@@ -515,19 +543,19 @@ class MiauSort:
         
         self.rotate(arr, kA, kA + k, b)
         
-        if k <= self.minRun // 2: # Discard keys if too few (saves on redistribution cost)
+        if k <= self.minRun // 2:
             l = kA - ((kA - a) & (r - 1))
             self.buildRuns(arr, l, b, self.minRun)
             return 0
         elif k < q:
-            k = self.floorPow2(k) # Same as above, but more conservative
+            k = self.floorPow2(k)
         
         l = kA - ((kA - a) & (r - 1))
         
         frag = 0
         prev = r
         
-        while l < b - k: # Thanks to bzy for run repair from Dust Sort
+        while l < b - k:
             m = l + 1
             while m < b - k and arr[m - 1] <= arr[m]:
                 m += 1
@@ -546,7 +574,7 @@ class MiauSort:
             frag = (frag + prev) & (r - 1)
             l = m
         
-        while r <= k: # Merge runs as much as keys will allow
+        while r <= k:
             for left in range(a, b - k, 2 * r):
                 mid = left + r
                 right = min(left + 2 * r, b - k)
@@ -569,7 +597,7 @@ class MiauSort:
         
         return k
     
-    def redistBuffer(self, arr, a, m, b): # Modifed from https://sortingalgos.miraheze.org/wiki/Rotate_Merge_Sort#Block-Swap_Merge
+    def redistBuffer(self, arr, a, m, b):
         L = m - a
         R = b - m
         while min(L, R) > self.minRun:
@@ -640,7 +668,7 @@ class MiauSort:
                 self.redistBuffer(arr, ls, mid, rs) # maybe this is faster
             N *= 2
     
-    def sortInPlace(self, arr, a, b): # O(1) space block merge
+    def sortInPlace(self, arr, a, b):
         n = b - a
         
         if n <= 2 * self.minRun:
@@ -738,37 +766,79 @@ class MiauSort:
         for i in range(n):
             to[b + i] = frm[a + i]
     
-    def mergeFWAux(self, arr, a, m, b, buf): # Assumes left half already in buffer
+    def mergeFWAux(self, arr, a, m, b, buf, c): # Assumes already in buffer
         L = m - a
-        self.arrCopy(arr, a, buf, 0, L)
         i = 0
         while i < L and m < b:
-            if buf[i] <= arr[m]:
-                arr[a] = buf[i]
+            if buf[c + i] <= arr[m]:
+                arr[a] = buf[c + i]
                 i += 1
             else:
                 arr[a] = arr[m]
                 m += 1
             a += 1
-        
         self.arrCopy(buf, i, arr, a, L - i)
     
-    def mergeBWAux(self, arr, a, m, b, buf): # Assumes right half already in buffer
+    def mergeBWAux(self, arr, a, m, b, buf, c): # Assumes already in buffer
         R = b - m
-        self.arrCopy(arr, m, buf, 0, R)
         b -= 1; m -= 1
         while R > 0 and m >= a:
-            if buf[R - 1] >= arr[m]:
-                arr[b] = buf[R - 1]
+            if buf[c + R - 1] >= arr[m]:
+                arr[b] = buf[c + R - 1]
                 R -= 1
             else:
                 arr[b] = arr[m]
                 m -= 1
             b -= 1
-        
-        self.arrCopy(buf, 0, arr, b - R + 1, R)
+        self.arrCopy(buf, c, arr, b - R + 1, R)
     
-    def scrollMergeAux(self, arr, p, a, m, left): # Same as in-place version but with writes instead of swaps
+    def mergeAux(self, arr, a, m, b, buf):
+        L = m - a
+        R = b - m
+        if L <= R:
+            self.arrCopy(arr, a, buf, 0, L)
+            self.mergeFWAux(arr, a, m, b, buf, 0)
+        else:
+            self.arrCopy(arr, m, buf, 0, R)
+            self.mergeBWAux(arr, a, m, b, buf, 0)
+    
+    def mergeTo(self, arr, a, L, R, buf, b): # Lengths for convenience
+        i = a + L
+        while L > 0 and R > 0:
+            if arr[a] <= arr[i]:
+                buf[b] = arr[a]
+                a += 1
+                L -= 1
+            else:
+                buf[b] = arr[i]
+                i += 1
+                R -= 1
+            b += 1
+        self.arrCopy(arr, a, buf, b, L)
+        b += L
+        self.arrCopy(arr, i, buf, b, R)
+    
+    def mergeFour(self, arr, a, W, X, Y, Z, buf):
+        mergeL = (arr[a + W - 1] > arr[a + W])
+        mergeR = (arr[a + W + X + Y - 1] > arr[a + W + X + Y])
+        if mergeL:
+            self.mergeTo(arr, a, W, X, buf, 0)
+        if mergeR:
+            self.mergeTo(arr, a + W + X, Y, Z, buf, W + X)
+        if mergeR and not mergeL:
+            self.mergeBWAux(arr, a, a + W + X, a + W + X + Y + Z, buf, W + X)
+            return
+        if mergeL and not mergeR:
+            self.mergeFWAux(arr, a, a + W + X, a + W + X + Y + Z, buf, 0)
+            return
+        if not (mergeL or mergeR) and arr[a + W + X - 1] > arr[a + W + X]:
+            self.mergeAux(arr, a, a + W + X, a + W + X + Y + Z, buf)
+            return
+        elif not (mergeL or mergeR):
+            return
+        self.mergeTo(buf, 0, W + X, Y + Z, arr, a)
+    
+    def scrollMergeAux(self, arr, p, a, m, left):
         i = m
         if left:
             while a < m:
@@ -790,7 +860,7 @@ class MiauSort:
                 p += 1
         return i
     
-    def tailMergeAux(self, arr, p, a, m, b, buf, bLen): # Same as in-place version but with writes and copies instead of swaps.
+    def tailMergeAux(self, arr, p, a, m, b, buf, bLen):
         i = m
         
         while a < m and i < b:
@@ -857,9 +927,9 @@ class MiauSort:
     def sortAux(self, arr, a, b, mem):
         n = b - a
         
-        if n <= 2 * self.minRun:
-            h = self.countRun(arr, a, b)
-            self.bSort(arr, a, b, h)
+        if n < 2 * self.minRun:
+            hint = self.countRun(arr, a, b)
+            self.bSort(arr, a, b, hint)
             return
         
         if n <= (self.minRun * self.minRun) // 2:
@@ -884,10 +954,35 @@ class MiauSort:
             buf = [0] * bLen
             tags = [0] * tLen
         else:
-            bLen = n
+            bLen = min(mem, n)
+            if bLen < n:
+                bLen = n // 2
             buf = [0] * bLen
         
         N = self.minRun
+        
+        while N * 4 <= bLen:
+            i = a
+            while i + 4 * N <= b:
+                self.mergeFour(arr, i, N, N, N, N, buf)
+                i += 4 * N
+            if i + 3 * N < b:
+                self.mergeFour(arr, i, N, N, N, (b - a) & (N - 1), buf)
+            elif i + 2 * N < b:
+                mergeL = (arr[i + N - 1] > arr[i + N])
+                if mergeL:
+                    self.mergeTo(arr, i, N, N, buf, 0)
+                    self.mergeFWAux(arr, i, i + 2 * N, b, buf, 0)
+                else:
+                    l, r = self.shrinkBounds(arr, i, i + 2 * N, b)
+                    if l > 0:
+                        self.mergeAux(arr, l, i + 2 * N, r, buf)
+            elif i + N < b:
+                l, r = self.shrinkBounds(arr, i, i + N, b)
+                if l > 0:
+                    self.mergeAux(arr, l, i + N, r, buf)
+            N *= 4
+        
         while N < n:
             for left in range(a, b, 2 * N):
                 mid = left + N
@@ -907,10 +1002,7 @@ class MiauSort:
                     l -= (l - left) & (bLen - 1)
                 
                 if min(lenL, lenR) <= bLen:
-                    if lenL <= lenR:
-                        self.mergeFWAux(arr, l, mid, r, buf)
-                    else:
-                        self.mergeBWAux(arr, l, mid, r, buf)
+                    self.mergeAux(arr, l, mid, r, buf)
                 else:
                     self.blockMergeAux(arr, l, mid, r, bLen, buf, tags)
             N *= 2
