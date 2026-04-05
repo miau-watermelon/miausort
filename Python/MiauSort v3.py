@@ -23,176 +23,165 @@ SOFTWARE.
 """
 
 class MiauSort:
-    minRun = 16
-    lastUsed = 0
+    def __init__(self, mem):
+        self.sizeSmall = 16
+        self.minRun = self.sizeSmall
+        self.minGallop = 7
+        self.lastBuffer = 0
+        self.rotateMaxAux = 8
+        self.mem = mem
+        self.buffer = None
+    
+    def swap(self, arr, a, b):
+        arr[a], arr[b] = arr[b], arr[a]
+    
+    def reverse(self, arr, start, end):
+        end -= 1
+        while start < end:
+            self.swap(arr, start, end)
+            start += 1
+            end -= 1
+    
+    def blockSwapForward(self, arr, a, b, n):
+        for i in range(n):
+            self.swap(arr, a+i, b+i)
+    
+    def blockSwapBackward(self, arr, a, b, n):
+        a -= 1
+        b -= 1
+        for i in range(n):
+            self.swap(arr, a-i, b-i)
+    
+    def arrayCopyForward(self, src, a, dest, b, n):
+        for i in range(n):
+            dest[b+i] = src[a+i]
+    
+    def arrayCopyBackward(self, src, a, dest, b, n):
+        a -= 1
+        b -= 1
+        for i in range(n):
+            dest[b-i] = src[a-i]
+    
+    def insertLeft(self, arr, src, dest):
+        tmp = arr[src]
+        for i in range(src, dest, -1):
+            arr[i] = arr[i-1]
+        arr[dest] = tmp
+    
+    def insertRight(self, arr, src, dest):
+        tmp = arr[src]
+        for i in range(src, dest):
+            arr[i] = arr[i+1]
+        arr[dest] = tmp
     
     def sqrtPow2(self, n):
-        b = 16
-        while b * b < n - b:
+        b = self.sizeSmall
+        while b*b < n:
             b *= 2
         return b
     
     def floorPow2(self, n):
-        n |= n >> 1
-        n |= n >> 2
-        n |= n >> 4
-        n |= n >> 8
-        n |= n >> 16
-        n |= n >> 32
-        return n - (n >> 1)
+        n |= n>>1
+        n |= n>>2
+        n |= n>>4
+        n |= n>>8
+        n |= n>>16
+        n |= n>>32
+        return n-(n>>1)
     
-    def bSearch(self, arr, x, a, b, left):
-        if left:
-            while a < b:
-                m = a + (b - a) // 2
-                if arr[m] < x:
-                    a = m + 1
-                else:
-                    b = m
-        else:
-            while a < b:
-                m = a + (b - a) // 2
-                if arr[m] <= x:
-                    a = m + 1
-                else:
-                    b = m
-        return a
-    
-    def expSearchFW(self, arr, x, a, b, left):
-        i = 0
-        i1 = 0
+    def countRun(self, arr, start, end):
+        i = start + 1
+        while i < end and arr[i] >= arr[i-1]: # Find non-descending run
+            i += 1
         
-        if left:
-            while a + i < b and arr[a + i] < x:
-                i1 = i
-                i = i * 2 + 1
-        else:
-            while a + i < b and arr[a + i] <= x:
-                i1 = i
-                i = i * 2 + 1
+        if i >= end or (i > start + 1 and arr[start] < arr[i-1]): # If ascending, no further work needed
+            return i
         
-        return self.bSearch(arr, x, a + i1, min(a + i, b), left)
-    
-    def expSearchBW(self, arr, x, a, b, left):
-        i = 0
-        i1 = 0
-        b1 = b-1
+        prev = arr[start]
+        self.reverse(arr, start, i) # Reverse first segment
         
-        if left:
-            while b1 - i >= a and arr[b1 - i] >= x:
-                i1 = i
-                i = i * 2 + 1
-        else:
-            while b1 - i >= a and arr[b1 - i] > x:
-                i1 = i
-                i = i * 2 + 1
+        while True:
+            seg = i
+            if seg >= end or arr[seg] >= prev: # Check if next segment is valid
+                break
+            
+            curr = arr[seg]
+            i += 1
+            while i < end and arr[i] == curr:
+                i += 1
+                
+            self.reverse(arr, seg, i) # Reverse the equal segment
+            prev = curr
         
-        return self.bSearch(arr, x, max(b1 - i, a), b - i1, left)
+        self.reverse(arr, start, i) # Reverse entire sequence
+        return i
     
-    def swap(self, arr, a, b):
-        tmp = arr[a]
-        arr[a] = arr[b]
-        arr[b] = tmp
+    def buildRuns(self, arr, start, end):
+        runs = 0
+        minRun = self.minRun
+        while start < end:
+            currEnd = self.countRun(arr, start, end)
+            runLen = currEnd-start
+            
+            if currEnd == end:
+                runs += 1
+                break
+            
+            if runLen < minRun:
+                ext = min(start+minRun, end)
+                self.expSort(arr, start, ext, currEnd)
+                start = ext
+                runs += 1
+                continue
+            
+            start = currEnd - runLen%minRun
+            runs += 1
+            
+            if start == currEnd:
+                continue
+            
+            ext = min(start+minRun, end)
+            self.expSort(arr, start, ext, currEnd)
+            start = ext
+            runs += 1
+        return runs
     
-    def reverse(self, arr, a, b):
-        b -= 1
-        while a < b:
-            self.swap(arr, a, b)
-            a += 1
-            b -= 1
-    
-    def blockSwap(self, arr, a, b, n):
-        for i in range(n):
-            self.swap(arr, a + i, b + i)
-    
-    def blockSwapBW(self, arr, a, b, n):
-        a -= 1; b -= 1
-        for i in range(n):
-            self.swap(arr, a - i, b - i)
-    
-    def triBlockSwap(self, arr, a, b, c, n): # Swap ABC -> BCA
-        for i in range(n):
-            tmp = arr[a + i]
-            arr[a + i] = arr[b + i]
-            arr[b + i] = arr[c + i]
-            arr[c + i] = tmp
-    
-    def insertLeft(self, arr, a, b):
-        tmp = arr[a]
-        while a > b:
-            arr[a] = arr[a - 1]
-            a -= 1
-        arr[b] = tmp
-    
-    def insertRight(self, arr, a, b):
-        tmp = arr[a]
-        while a < b:
-            arr[a] = arr[a + 1]
-            a += 1
-        arr[b] = tmp
-    
-    def rotate(self, arr, a, m, e): # Trinity rotation
-        lenA = m - a
-        lenB = e - m
-
-        if lenA < 1 or lenB < 1:
-            return
-        
-        if lenA == 1 or lenB == 1:
-            if lenA <= lenB:
-                self.insertRight(arr, a, e - 1)
+    def expSearchForward(self, arr, target, start, end, right):
+        if (arr[start] > target if right else arr[start] >= target):
+            return start
+        i = 1
+        while start+i < end and (arr[start+i] <= target if right else arr[start+i] < target):
+            i <<= 1
+        lo = start+(i>>1)
+        hi = min(start+i, end)
+        while lo < hi:
+            m = (lo+hi)>>1
+            if (arr[m] <= target if right else arr[m] < target):
+                lo = m+1
             else:
-                self.insertLeft(arr, e - 1, a)
-            return
-        
-        if max(lenA, lenB) % min(lenA, lenB) == 0:
-            if lenA <= lenB:
-                self.blockSwap(arr, a, m, lenB)
-            else:
-                self.blockSwapBW(arr, m, e, lenA)
-            return
-        
-        b = m - 1
-        c = m
-        d = e - 1
-        
-        tmp = 0
-        while a < b and c < d: # Cycle reversal rotation (very fast on average)
-            tmp = arr[b]
-            arr[b] = arr[a]
-            b -= 1
-            arr[a] = arr[c]
-            a += 1
-            arr[c] = arr[d]
-            c += 1
-            arr[d] = tmp
-            d -= 1
-        
-        while a < b:
-            tmp = arr[b]
-            arr[b] = arr[a]
-            b -= 1
-            arr[a] = arr[d]
-            a += 1
-            arr[d] = tmp
-            d -= 1
-        
-        while c < d:
-            tmp = arr[c]
-            arr[c] = arr[d]
-            c += 1
-            arr[d] = arr[a]
-            d -= 1
-            arr[a] = tmp
-            a += 1
-        
-        if a < d:
-            self.reverse(arr, a, d+1)
+                hi = m
+        return lo
     
-    def bSort(self, arr, a, b, h):
-        for i in range(h, b):
-            if arr[i - 1] > arr[i]:
-                self.insertLeft(arr, i, self.bSearch(arr, arr[i], a, i, False))
+    def expSearchBackward(self, arr, target, start, end, right):
+        end -= 1
+        if (arr[end] <= target if right else arr[end] < target):
+            return end+1
+        i = 1
+        while end-i >= start and (arr[end-i] > target if right else arr[end-i] >= target):
+            i <<= 1
+        lo = max(end-i, start)
+        hi = end-(i>>1)
+        while lo < hi:
+            m = (lo+hi)>>1
+            if (arr[m] > target if right else arr[m] >= target):
+                hi = m
+            else:
+                lo = m+1
+        return lo
+    
+    def expSort(self, arr, start, end, hint):
+        for i in range(hint, end):
+            self.insertLeft(arr, i, self.expSearchBackward(arr, arr[i], start, i, True))
     
     def shellsort(self, arr, start, end): # Only used for sorting buffers since they contain fully distinct values
         gaps = [6148184740, 2769452586, 1427501165, 561937462, 253124983, 114020263, 51360479, 23135351, 10528127, 4697153, 2131981, 973657, 443557, 197803, 89129, 40354, 18118, 8129, 3659, 1636, 701, 301, 132, 57, 23, 10, 4, 1]
@@ -212,797 +201,1013 @@ class MiauSort:
 
                 arr[j] = key
     
-    def scrollMerge(self, arr, p, a, m, left):
-        i = m
-        if left:
-            while a < m:
-                if arr[a] <= arr[i]:
-                    self.swap(arr, a, p)
-                    a += 1
+    def tagSort(self, arr, tagStart, tagCount, midTag): # Just a stable partition - means tags can be sorted in O(sqrt n) :D
+        if self.buffer is not None and len(self.buffer) >= tagCount:
+            buf = self.buffer
+            currTag = tagStart
+            bufWrites = 0
+            
+            while currTag < tagStart+tagCount:
+                if arr[currTag] < midTag:
+                    if bufWrites != 0:
+                        arr[currTag-bufWrites] = arr[currTag]
                 else:
-                    self.swap(arr, i, p)
-                    i += 1
-                p += 1
+                    buf[bufWrites] = arr[currTag]
+                    bufWrites += 1
+                currTag += 1
+            self.arrayCopyForward(buf, 0, arr, currTag-bufWrites, bufWrites)
         else:
-            while a < m:
-                if arr[a] < arr[i]:
-                    self.swap(arr, a, p)
-                    a += 1
+            bufferStart = self.bufferStart
+            currTag = tagStart
+            bufSwaps = 0
+            
+            while currTag < tagStart+tagCount:
+                if arr[currTag] < midTag:
+                    if bufSwaps != 0:
+                        self.swap(arr, currTag, currTag-bufSwaps)
                 else:
-                    self.swap(arr, i, p)
-                    i += 1
-                p += 1
-        return i
+                    self.swap(arr, currTag, bufferStart+bufSwaps)
+                    bufSwaps += 1
+                currTag += 1
+            self.blockSwapForward(arr, currTag-bufSwaps, bufferStart, bufSwaps)
+            self.lastBuffer = max(self.lastBuffer, bufSwaps)
     
-    def tailMerge(self, arr, p, a, m, b, bufPos, bLen):
-        i = m
+    def smartCollectBackward(self, arr, start, end, target):
+        rotate = self.rotate
         
-        while a < m and i < b:
-            if arr[a] <= arr[i]:
-                self.swap(arr, a, p)
-                a += 1
-            else:
-                self.swap(arr, i, p)
-                i += 1
-            p += 1
+        n = end-start
+        runSize = self.minRun
+        keysEnd = end
+        keyCount = 1
+        runEnd = end-1
+        runStart = end - n%runSize
+        if runStart == end:
+            runStart -= runSize
         
-        if a < m:
-            if a > p:
-                self.blockSwap(arr, p, a, m - a)
-            self.blockSwap(arr, bufPos, b-bLen, bLen)
+        while runEnd > start:
+            currRun = (runStart-start+runSize-1)//runSize
             
-            return
-        
-        a = 0
-        while a < bLen and i < b:
-            if arr[bufPos + a] <= arr[i]:
-                self.swap(arr, bufPos + a, p)
-                a += 1
-            else:
-                self.swap(arr, i, p)
-                i += 1
-            p += 1
-        
-        self.blockSwap(arr, p, bufPos + a, bLen - a)
-    
-    def blockSelectSort(self, arr, a, bCount, bLen, lCount, tags, t):
-        midTag = lCount
-        
-        k = lCount+1
-        j = 0
-        while j < k - 1:
-            minIdx = j
-            minVal = arr[a + (j + 1) * bLen - 1]
-            for i in range(max(j + 1, lCount-1), k):
-                bVal = arr[a + (i + 1) * bLen - 1]
-                if bVal < minVal or (bVal == minVal and tags[t + i] < tags[t + minIdx]):
-                    minIdx = i
-                    minVal = bVal
+            keyPtr = keysEnd-1
+            runPtr = runEnd-1
             
-            if minIdx != j:
-                self.blockSwap(arr, a + j * bLen, a + minIdx * bLen, bLen)
-                self.swap(tags, t + j, t + minIdx)
+            while runPtr >= runStart:
+                val = arr[runPtr]
+                while keyPtr >= keysEnd-keyCount and arr[keyPtr] > val:
+                    keyPtr -= 1
+                if keyPtr < keysEnd-keyCount or arr[keyPtr] != val:
+                    self.insertRight(arr, runPtr, keyPtr)
+                    keyCount += 1
+                    runPtr -= 1
+                else:
+                    while runEnd > start:
+                        while runPtr >= runStart:
+                            val = arr[runPtr]
+                            while keyPtr >= keysEnd-keyCount and arr[keyPtr] > val:
+                                keyPtr -= 1
+                            
+                            if keyPtr < keysEnd-keyCount or arr[keyPtr] != val:
+                                break
+                            
+                            while runPtr >= runStart and arr[runPtr] == val:
+                                runPtr -= 1
+                        
+                        if runPtr >= runStart or keyCount >= runSize and currRun%2 == 0:
+                            rotate(arr, runPtr+1, keysEnd-keyCount, keysEnd)
+                            ofs = keysEnd-keyCount-(runPtr+1)
+                            keysEnd -= ofs
+                            keyPtr -= ofs
+                            break
+                        
+                        keyPtr = keysEnd-1
+                        
+                        runEnd = runStart
+                        runStart = max(start, runEnd-runSize)
+                        
+                        currRun = (runStart-start+runSize-1)//runSize
                 
-                if k < bCount and minIdx == k - 1:
-                    k += 1
+                if keyCount >= target:
+                    break
             
-            if minIdx == midTag:
-                midTag = j
+            if keyCount >= target:
+                break
             
-            j += 1
+            if keyCount >= runSize and currRun%2 == 0:
+                self.bufferStart = keysEnd-keyCount
+                self.bufferLen = keyCount
+                for left in range(start, runStart, 2*runSize):
+                    mid = min(left+runSize, runStart)
+                    right = min(left+2*runSize, runStart)
+                    
+                    if mid == right:
+                        break
+                    
+                    skip, l, r = self.checkBounds(arr, left, mid, right, False)
+                    
+                    if skip:
+                        continue
+                    
+                    self.mergeDecide(arr, l, mid, r, False)
+                
+                self.shellsort(arr, self.bufferStart, self.bufferStart+self.lastBuffer)
+                self.lastBuffer = 0
+                runSize *= 2
+                
+            
+            runEnd = runStart
+            runStart = max(start, runEnd-runSize)
         
-        return t + midTag
-    
-    def blockMerge(self, arr, a, m, b, bLen, buf, t):
-        a1 = a + bLen
-        lenL = m - a1
-        lenR = b - m
+        lastRotated = keysEnd-keyCount
+        lastRotated -= (lastRotated-start)%runSize
         
-        countL = lenL // bLen
-        countR = lenR // bLen
-        rem = lenR & (bLen - 1)
-        bCount = countL+countR
-        
-        self.triBlockSwap(arr, buf, m - bLen, a, bLen)
-        self.insertRight(arr, t, t + countL - 1)
-        
-        midTag = self.blockSelectSort(arr, a1, bCount, bLen, countL, arr, t)
-        
-        f = a1
-        left = arr[t] < arr[midTag]
-        for i in range(1, bCount):
-            nxt = a1 + i * bLen
-            if left ^ (arr[t + i] < arr[midTag]):
-                f = self.scrollMerge(arr, f - bLen, f, nxt, left)
-                left = not left
-        
-        if left:
-            self.tailMerge(arr, f - bLen, f, b - rem, b, buf, bLen)
+        if keyCount >= target:
+            rotate(arr, keysEnd-keyCount, keysEnd, end)
         else:
-            self.tailMerge(arr, f - bLen, f, f, b, buf, bLen)
+            dist = end-keysEnd
+            self.blockSwapForward(arr, keysEnd-keyCount, keysEnd, dist)
+            keyCount = self.floorPow2(keyCount)
         
-        self.swap(arr, midTag, buf)
-        bufSwaps = 1
-        for c in range(midTag + 1, t + bCount):
-            if arr[c] < arr[buf]:
-                self.swap(arr, c, c - bufSwaps)
-            else:
-                self.swap(arr, c, buf + bufSwaps)
-                bufSwaps += 1
+        if keyCount < target and keyCount <= 4:
+            keyCount = 0
         
-        self.blockSwap(arr, t + bCount - bufSwaps, buf, bufSwaps)
+        keysEnd -= keyCount
+        regionEnd = end-keyCount
+        self.bufferStart = regionEnd
+        self.bufferLen = keyCount
         
-        self.lastUsed = max(self.lastUsed, max(bLen, bufSwaps))
+        self.buildRuns(arr, lastRotated, regionEnd)
+        mergeN = self.minRun
+        while mergeN < runSize:
+            for left in range(lastRotated, regionEnd, 2*mergeN):
+                mid = min(left+mergeN, regionEnd)
+                right = min(left+2*mergeN, regionEnd)
+                
+                if mid == right:
+                    break
+                
+                skip, l, r = self.checkBounds(arr, left, mid, right, False)
+                
+                if skip:
+                    continue
+                
+                self.mergeDecide(arr, l, mid, r, False)
+            mergeN *= 2
+        
+        mergeN = runSize
+        while mergeN <= keyCount:
+            for left in range(start, regionEnd, 2*mergeN):
+                mid = min(left+mergeN, regionEnd)
+                right = min(left+2*mergeN, regionEnd)
+                
+                if mid == right:
+                    break
+                
+                skip, l, r = self.checkBounds(arr, left, mid, right, False)
+                
+                if skip:
+                    continue
+                
+                self.mergeDecide(arr, l, mid, r, False)
+            mergeN *= 2
+        
+        self.minRun = max(runSize, mergeN//2)
+        return keyCount
     
-    def lazyMerge(self, arr, a, m, b, left):
-        if m - a <= b - m:
-            s = a
-            l = m
+    def mergeDecide(self, arr, start, mid, end, right): # Helper
+        lenA = mid-start
+        lenB = end-mid
+        
+        if min(lenA, lenB) <= self.sizeSmall or min(lenA, lenB) > self.bufferLen:
+            self.lazyStableMerge(arr, start, mid, end, right)
+        else:
+            self.mergeBuf(arr, start, mid, end, right)
+    
+    def mergeBuf(self, arr, start, mid, end, right): # Ensures merge direction matches buffer's capacity
+        leftLen = mid-start
+        rightLen = end-mid
+        if leftLen <= rightLen:
+            self.lastBuffer = max(self.lastBuffer, leftLen)
+            self.mergeBufForward(arr, start, mid, end, right)
+        else:
+            self.lastBuffer = max(self.lastBuffer, rightLen)
+            self.mergeBufBackward(arr, start, mid, end, right)
+    
+    def mergeExt(self, arr, start, mid, end, right):
+        if mid-start <= end-mid:
+            self.mergeExtForward(arr, start, mid, end, right)
+        else:
+            self.mergeExtBackward(arr, start, mid, end, right)
+    
+    def checkBounds(self, arr, start, mid, end, right): # Merge optimiser - skips where merges aren't needed and shrinks bounds
+        rotate = self.rotate
+        
+        if arr[mid-1] <= arr[mid]:
+            return True, start, end
+        
+        start = self.expSearchForward(arr, arr[mid], start, mid, not right)
+        end = self.expSearchBackward(arr, arr[mid-1], mid, end, right)
+        
+        if (arr[start] >= arr[end-1] if right else arr[start] > arr[end-1]):
+            rotate(arr, start, mid, end)
+            return True, start, end
+        
+        return False, start, end
 
-            while s < l and l < b:
-                if left:
-                    cmp = arr[s] > arr[l]
-                else:
+    def mergeBufForward(self, arr, start, mid, end, right):
+        bufferStart = self.bufferStart
+        leftLen = mid-start
+        self.blockSwapForward(arr, bufferStart, start, leftLen)
+        l, r, dest = bufferStart, mid, start
+        countLeft = countRight = 0
+        minGallop = self.minGallop
+        
+        if right:
+            while l < bufferStart+leftLen and r < end:
+                while l < bufferStart+leftLen and r < end and (countLeft | countRight) < minGallop:
+                    if arr[l] < arr[r]:
+                        self.swap(arr, l, dest)
+                        l += 1
+                        countLeft += 1
+                        countRight = 0
+                    else:
+                        self.swap(arr, r, dest)
+                        r += 1
+                        countRight += 1
+                        countLeft = 0
+                    dest += 1
+                
+                while l < bufferStart+leftLen and r < end:
+                    countLeft = self.expSearchForward(arr, arr[r], l, bufferStart+leftLen, False)-l
+                    if countLeft:
+                        self.blockSwapForward(arr, l, dest, countLeft)
+                        l += countLeft; dest += countLeft
+                        if l >= bufferStart+leftLen:
+                            break
+                    self.swap(arr, r, dest)
+                    r += 1; dest += 1
+                    if r >= end:
+                        break
+                    countRight = self.expSearchForward(arr, arr[l], r, end, True)-r
+                    if countRight:
+                        self.blockSwapForward(arr, r, dest, countRight)
+                        r += countRight; dest += countRight
+                        if r >= end:
+                            break
+                    self.swap(arr, l, dest)
+                    l += 1; dest += 1
+                    if l >= bufferStart+leftLen:
+                        break
+                    
+                    if (countLeft | countRight) < minGallop:
+                        minGallop += 2
+                        break
+        else:
+            while l < bufferStart+leftLen and r < end:
+                while l < bufferStart+leftLen and r < end and (countLeft | countRight) < minGallop:
+                    if arr[l] <= arr[r]:
+                        self.swap(arr, l, dest)
+                        l += 1
+                        countLeft += 1
+                        countRight = 0
+                    else:
+                        self.swap(arr, r, dest)
+                        r += 1
+                        countRight += 1
+                        countLeft = 0
+                    dest += 1
+                
+                while l < bufferStart+leftLen and r < end:
+                    countLeft = self.expSearchForward(arr, arr[r], l, bufferStart+leftLen, True)-l
+                    if countLeft:
+                        self.blockSwapForward(arr, l, dest, countLeft)
+                        l += countLeft; dest += countLeft
+                        if l >= bufferStart+leftLen:
+                            break
+                    self.swap(arr, r, dest)
+                    r += 1; dest += 1
+                    if r >= end:
+                        break
+                    countRight = self.expSearchForward(arr, arr[l], r, end, False)-r
+                    if countRight:
+                        self.blockSwapForward(arr, r, dest, countRight)
+                        r += countRight; dest += countRight
+                        if r >= end:
+                            break
+                    self.swap(arr, l, dest)
+                    l += 1; dest += 1
+                    if l >= bufferStart+leftLen:
+                        break
+                    
+                    if (countLeft | countRight) < minGallop:
+                        minGallop += 2
+                        break
+        
+        while l < bufferStart+leftLen:
+            self.swap(arr, l, dest)
+            l += 1
+            dest += 1
+        
+        self.minGallop = minGallop
+    
+    def mergeBufBackward(self, arr, start, mid, end, right):
+        bufferStart = self.bufferStart
+        rightLen = end-mid
+        self.blockSwapBackward(arr, bufferStart+rightLen, end, rightLen)
+        l, r, dest = mid-1, bufferStart+rightLen-1, end-1
+        countLeft = countRight = 0
+        minGallop = self.minGallop
+        
+        if right:
+            while l >= start and r >= bufferStart:
+                while l >= start and r >= bufferStart and (countLeft | countRight) < minGallop:
+                    if arr[r] > arr[l]:
+                        self.swap(arr, r, dest)
+                        r -= 1
+                        countRight += 1
+                        countLeft = 0
+                    else:
+                        self.swap(arr, l, dest)
+                        l -= 1
+                        countLeft += 1
+                        countRight = 0
+                    dest -= 1
+                
+                while l >= start and r >= bufferStart:
+                    countLeft = l+1-self.expSearchBackward(arr, arr[r], start, l+1, False)
+                    if countLeft:
+                        self.blockSwapBackward(arr, l+1, dest+1, countLeft)
+                        l -= countLeft; dest -= countLeft
+                        if l < start:
+                            break
+                    self.swap(arr, r, dest)
+                    r -= 1; dest -= 1
+                    if r < bufferStart:
+                        break
+                    countRight = r+1-self.expSearchBackward(arr, arr[l], bufferStart, r+1, True)
+                    if countRight:
+                        self.blockSwapBackward(arr, r+1, dest+1, countRight)
+                        r -= countRight; dest -= countRight
+                        if r < bufferStart:
+                            break
+                    self.swap(arr, l, dest)
+                    l -= 1; dest -= 1
+                    if l < start:
+                        break
+                    
+                    if (countLeft | countRight) < minGallop:
+                        minGallop += 2
+                        break
+        else:
+            while l >= start and r >= bufferStart:
+                while l >= start and r >= bufferStart and (countLeft | countRight) < minGallop:
+                    if arr[r] >= arr[l]:
+                        self.swap(arr, r, dest)
+                        r -= 1
+                        countRight += 1
+                        countLeft = 0
+                    else:
+                        self.swap(arr, l, dest)
+                        l -= 1
+                        countLeft += 1
+                        countRight = 0
+                    dest -= 1
+                
+                while l >= start and r >= bufferStart:
+                    countLeft = l+1-self.expSearchBackward(arr, arr[r], start, l+1, True)
+                    if countLeft:
+                        self.blockSwapBackward(arr, l+1, dest+1, countLeft)
+                        l -= countLeft; dest -= countLeft
+                        if l < start:
+                            break
+                    self.swap(arr, r, dest)
+                    r -= 1; dest -= 1
+                    if r < bufferStart:
+                        break
+                    countRight = r+1-self.expSearchBackward(arr, arr[l], bufferStart, r+1, False)
+                    if countRight:
+                        self.blockSwapBackward(arr, r+1, dest+1, countRight)
+                        r -= countRight; dest -= countRight
+                        if r < bufferStart:
+                            break
+                    self.swap(arr, l, dest)
+                    l -= 1; dest -= 1
+                    if l < start:
+                        break
+                    
+                    if (countLeft | countRight) < minGallop:
+                        minGallop += 2
+                        break
+        
+        while r >= bufferStart:
+            self.swap(arr, r, dest)
+            r -= 1
+            dest -= 1
+        
+        self.minGallop = minGallop
+    
+    def mergeExtForward(self, arr, start, mid, end, right):
+        leftLen = mid-start
+        buf = self.buffer
+        self.arrayCopyForward(arr, start, buf, 0, leftLen)
+        l, r, dest = 0, mid, start
+        
+        countLeft = countRight = 0
+        minGallop = self.minGallop
+        
+        if right:
+            while l < leftLen and r < end:
+                while l < leftLen and r < end and (countLeft|countRight) < minGallop:
+                    if buf[l] < arr[r]:
+                        arr[dest] = buf[l]
+                        l += 1
+                        countLeft += 1
+                        countRight = 0
+                    else:
+                        arr[dest] = arr[r]
+                        r += 1
+                        countRight += 1
+                        countLeft = 0
+                    dest += 1
+                
+                while l < leftLen and r < end:
+                    countLeft = self.expSearchForward(buf, arr[r], l, leftLen, False)-l
+                    if countLeft:
+                        self.arrayCopyForward(buf, l, arr, dest, countLeft)
+                        l += countLeft; dest += countLeft
+                        if l >= leftLen:
+                            break
+                    arr[dest] = arr[r]
+                    r += 1; dest += 1
+                    if r >= end:
+                        break
+                    countRight = self.expSearchForward(arr, buf[l], r, end, True)-r
+                    if countRight:
+                        self.arrayCopyForward(arr, r, arr, dest, countRight)
+                        r += countRight; dest += countRight
+                        if r >= end:
+                            break
+                    arr[dest] = buf[l]
+                    l += 1; dest += 1
+                    if l >= leftLen:
+                        break
+                    
+                    if (countLeft|countRight) < minGallop:
+                        minGallop += 2
+                        break
+        else:
+            while l < leftLen and r < end:
+                while l < leftLen and r < end and (countLeft|countRight) < minGallop:
+                    if buf[l] <= arr[r]:
+                        arr[dest] = buf[l]
+                        l += 1
+                        countLeft += 1
+                        countRight = 0
+                    else:
+                        arr[dest] = arr[r]
+                        r += 1
+                        countRight += 1
+                        countLeft = 0
+                    dest += 1
+                
+                while l < leftLen and r < end:
+                    countLeft = self.expSearchForward(buf, arr[r], l, leftLen, True)-l
+                    if countLeft:
+                        self.arrayCopyForward(buf, l, arr, dest, countLeft)
+                        l += countLeft; dest += countLeft
+                        if l >= leftLen:
+                            break
+                    arr[dest] = arr[r]
+                    r += 1; dest += 1
+                    if r >= end:
+                        break
+                    countRight = self.expSearchForward(arr, buf[l], r, end, False)-r
+                    if countRight:
+                        self.arrayCopyForward(arr, r, arr, dest, countRight)
+                        r += countRight; dest += countRight
+                        if r >= end:
+                            break
+                    arr[dest] = buf[l]
+                    l += 1; dest += 1
+                    if l >= leftLen:
+                        break
+                    
+                    if (countLeft|countRight) < minGallop:
+                        minGallop += 2
+                        break
+        
+        while l < leftLen:
+            arr[dest] = buf[l]
+            dest += 1
+            l += 1
+        
+        self.minGallop = minGallop
+    
+    def mergeExtBackward(self, arr, start, mid, end, right):
+        buf = self.buffer
+        rightLen = end-mid
+        self.arrayCopyBackward(arr, end, buf, rightLen, rightLen)
+        l, r, dest = mid-1, rightLen-1, end-1
+        countLeft = countRight = 0
+        minGallop = self.minGallop
+        
+        if right:
+            while l >= start and r >= 0:
+                while l >= start and r >= 0 and (countLeft | countRight) < minGallop:
+                    if buf[r] > arr[l]:
+                        arr[dest] = buf[r]
+                        r -= 1
+                        countRight += 1
+                        countLeft = 0
+                    else:
+                        arr[dest] = arr[l]
+                        l -= 1
+                        countLeft += 1
+                        countRight = 0
+                    dest -= 1
+                
+                while l >= start and r >= 0:
+                    countLeft = l+1-self.expSearchBackward(arr, buf[r], start, l+1, False)
+                    if countLeft:
+                        self.arrayCopyBackward(arr, l+1, arr, dest+1, countLeft)
+                        l -= countLeft; dest -= countLeft
+                        if l < start:
+                            break
+                    arr[dest] = buf[r]
+                    r -= 1; dest -= 1
+                    if r < 0:
+                        break
+                    countRight = r+1-self.expSearchBackward(buf, arr[l], 0, r+1, True)
+                    if countRight:
+                        self.arrayCopyBackward(buf, r+1, arr, dest+1, countRight)
+                        r -= countRight; dest -= countRight
+                        if r < 0:
+                            break
+                    arr[dest] = arr[l]
+                    l -= 1; dest -= 1
+                    if l < start:
+                        break
+                    
+                    if (countLeft | countRight) < minGallop:
+                        minGallop += 2
+                        break
+        else:
+            while l >= start and r >= 0:
+                while l >= start and r >= 0 and (countLeft | countRight) < minGallop:
+                    if buf[r] >= arr[l]:
+                        arr[dest] = buf[r]
+                        r -= 1
+                        countRight += 1
+                        countLeft = 0
+                    else:
+                        arr[dest] = arr[l]
+                        l -= 1
+                        countLeft += 1
+                        countRight = 0
+                    dest -= 1
+                
+                while l >= start and r >= 0:
+                    countLeft = l+1-self.expSearchBackward(arr, buf[r], start, l+1, True)
+                    if countLeft:
+                        self.arrayCopyBackward(arr, l+1, arr, dest+1, countLeft)
+                        l -= countLeft; dest -= countLeft
+                        if l < start:
+                            break
+                    arr[dest] = buf[r]
+                    r -= 1; dest -= 1
+                    if r < 0:
+                        break
+                    countRight = r+1-self.expSearchBackward(buf, arr[l], 0, r+1, False)
+                    if countRight:
+                        self.arrayCopyBackward(buf, r+1, arr, dest+1, countRight)
+                        r -= countRight; dest -= countRight
+                        if r < 0:
+                            break
+                    arr[dest] = arr[l]
+                    l -= 1; dest -= 1
+                    if l < start:
+                        break
+                    
+                    if (countLeft | countRight) < minGallop:
+                        minGallop += 2
+                        break
+        
+        while r >= 0:
+            arr[dest] = buf[r]
+            r -= 1
+            dest -= 1
+        
+        self.minGallop = minGallop
+    
+    def lazyStableMerge(self, arr, start, mid, end, right): # Implementation from Helium Sort, optimised with exponential searches
+        rotate = self.rotate
+        bufferLen = 0 if self.buffer is None or min(mid-start, end-mid) <= self.sizeSmall else len(self.buffer)
+        
+        if mid-start <= end-mid:
+            s = start
+            l = mid
+
+            while l-s >= bufferLen and l < end:
+                if right:
                     cmp = arr[s] >= arr[l]
+                else:
+                    cmp = arr[s] > arr[l]
                 
                 if cmp:
-                    p = self.expSearchFW(arr, arr[s], l, b, left)
-                    self.rotate(arr, s, l, p)
-                    s += p - l
+                    p = self.expSearchForward(arr, arr[s], l, end, right)
+                    rotate(arr, s, l, p)
+                    s += p-l
                     l = p
                 else:
                     s += 1
+            
+            if l-s > 0 and l < end:
+                self.mergeExt(arr, s, l, end, right)
         else:
-            s = b - 1
-            l = m - 1
+            s = end - 1
+            l = mid - 1
 
-            while s > l and l >= a:
-                if left:
-                    cmp = arr[l] > arr[s]
-                else:
+            while s+1-l >= bufferLen and l >= start:
+                if right:
                     cmp = arr[l] >= arr[s]
+                else:
+                    cmp = arr[l] > arr[s]
                 
                 if cmp:
-                    p = self.expSearchBW(arr, arr[s], a, l, not left)
-                    self.rotate(arr, p, l + 1, s + 1)
-                    s -= l + 1 - p
-                    l = p - 1
+                    p = self.expSearchBackward(arr, arr[s], start, l, not right)
+                    rotate(arr, p, l+1, s+1)
+                    s -= l+1-p
+                    l = p-1
                 else:
                     s -= 1
+            
+            if s+1-l > 0 and l >= start:
+                self.mergeExt(arr, start, l+1, s+1, right)
     
-    def blockMergeNoBuf(self, arr, a, m, b, bLen, t):
-        lenL = m - a
-        lenR = b - m
+    def blockMerge(self, arr, start, mid, end):
+        tagsStart = self.tagsStart
+        bufferStart = self.bufferStart
+        blockLen = self.blockLen
         
-        countL = lenL // bLen
-        countR = lenR // bLen
-        rem = lenR & (bLen - 1)
-        bCount = countL + countR
+        leftLen, rightLen = mid-start, end-mid
         
-        midTag = self.blockSelectSort(arr, a, bCount, bLen, countL, arr, t)
+        leftBlocks = leftLen//blockLen
+        rightBlocks = rightLen//blockLen
         
-        f = a
-        left = arr[t] < arr[midTag]
-        for i in range(1, bCount):
-            if left ^ (arr[t + i] < arr[midTag]):
-                nxt = a + i * bLen
-                nxtB = self.expSearchFW(arr, arr[nxt-1], nxt, nxt + bLen, left)
-                self.lazyMerge(arr, f, nxt, nxtB, left)
-                f = nxtB
-                left = not left
+        blockCount = leftBlocks+rightBlocks
+        frag = (end-start)-blockCount*blockLen
         
-        if left and rem > 0:
-            self.lazyMerge(arr, f, b-rem, b, True)
+        if not self.smartTagSort:
+            self.shellsort(arr, tagsStart, tagsStart+blockCount)
         
-        j = 1
-        for c in range(midTag+1, t + bCount):
-            if arr[c] <= arr[midTag]:
-                self.insertLeft(arr, c, midTag)
-                midTag += 1
+        midTag = arr[tagsStart+leftBlocks]
+        
+        self.smartBlockSelect(arr, start, blockCount, blockLen, leftBlocks)
+        self.mergeBlocks(arr, start, blockCount, blockLen, frag, midTag)
+        
+        if self.smartTagSort:
+            self.tagSort(arr, tagsStart, blockCount, midTag)
     
-    def shrinkBounds(self, arr, a, m, b):
-        if arr[m - 1] <= arr[m]:
-            return -1, b
+    def smartBlockSelect(self, arr, start, blockCount, blockLen, blockB):
+        tagsStart = self.tagsStart
+        endB = blockB+1
         
-        a = self.expSearchFW(arr, arr[m], a, m, False)
-        b = self.expSearchBW(arr, arr[m - 1], m, b, True)
-        
-        if arr[a] > arr[b - 1]:
-            self.rotate(arr, a, m, b)
-            return -1, b
-        
-        return a, b
+        for i in range(blockCount):
+            minIdx = i
+            minVal = arr[start+(i+1)*blockLen-1]
+            
+            for j in range(max(i+1, blockB), endB):
+                blockVal = arr[start+(j+1)*blockLen-1]
+                
+                if blockVal < minVal or (blockVal == minVal and arr[tagsStart+j] < arr[tagsStart+minIdx]):
+                    minVal = blockVal
+                    minIdx = j
+            
+            if minIdx != i:
+                self.blockSwapForward(arr, start+i*blockLen, start+minIdx*blockLen, blockLen)
+                self.swap(arr, tagsStart+i, tagsStart+minIdx)
+                
+                if endB < blockCount and minIdx == endB-1:
+                    endB += 1
     
-    def mergeFW(self, arr, a, m, b, p):
-        L = m - a
-        self.lastUsed = max(self.lastUsed, L)
-        self.blockSwap(arr, a, p, L)
-        i = m
-        while L > 0 and i < b:
-            if arr[p] <= arr[i]:
-                self.swap(arr, p, a)
-                p += 1
-                L -= 1
+    def mergeBlocks(self, arr, start, blockCount, blockLen, remainder, midTag):
+        rotate = self.rotate
+        
+        tagsStart = self.tagsStart
+        fragStart = start
+        right = arr[tagsStart] >= midTag
+        for i in range(1, blockCount):
+            if right ^ (arr[tagsStart+i] >= midTag):
+                next = start+i*blockLen
+                fragStart = self.expSearchForward(arr, arr[next], fragStart, next, not right) # optional
+                nextEnd = self.expSearchBackward(arr, arr[next-1], next, next+blockLen, right) # mandatory
+                if (arr[fragStart] >= arr[nextEnd-1] if right else arr[fragStart] > arr[nextEnd-1]):
+                    rotate(arr, fragStart, next, nextEnd)
+                else:
+                    self.mergeDecide(arr, fragStart, next, nextEnd, right)
+                fragStart = nextEnd
+                right = not right
+        
+        if not right and remainder != 0:
+            lastFrag = start+blockCount*blockLen
+            self.mergeDecide(arr, fragStart, lastFrag, lastFrag+remainder, right)
+    
+    def rotate(self, arr, a, m, e): # Trinity rotation
+        buf = self.buffer
+        
+        lenA = m-a
+        lenB = e-m
+
+        if lenA < 1 or lenB < 1:
+            return
+        
+        if lenA == 1: # Better to replace with auxiliary memory (only 8)
+            self.insertRight(arr, a, e-1)
+            return
+        
+        if buf is not None and lenA <= len(buf):
+            self.arrayCopyForward(arr, a, buf, 0, lenA)
+            self.arrayCopyForward(arr, m, arr, a, lenB)
+            self.arrayCopyForward(buf, 0, arr, a+lenB, lenA)
+            return
+        
+        if lenB == 1:
+            self.insertLeft(arr, e-1, a)
+            return
+        
+        if buf is not None and lenB <= len(buf):
+            self.arrayCopyBackward(arr, e, buf, lenB, lenB)
+            self.arrayCopyBackward(arr, m, arr, e, lenA)
+            self.arrayCopyBackward(buf, lenB, arr, a+lenB, lenB)
+            return
+        
+        if max(lenA, lenB) % min(lenA, lenB) == 0: # New - Scroll instead of plain block swap
+            if lenA <= lenB:
+                self.blockSwapForward(arr, a, m, lenB)
             else:
-                self.swap(arr, i, a)
-                i += 1
-            a += 1
-        
-        self.blockSwap(arr, a, p, L)
-    
-    def mergeBW(self, arr, a, m, b, p):
-        R = b - m
-        self.lastUsed = max(self.lastUsed, R)
-        self.blockSwap(arr, m, p, R)
-        b -= 1
-        i = m - 1
-        while R > 0 and i >= a:
-            if arr[p + R - 1] >= arr[i]:
-                self.swap(arr, p + R - 1, b)
-                R -= 1
-            else:
-                self.swap(arr, i, b)
-                i -= 1
+                self.blockSwapBackward(arr, m, e, lenA)
+            return
+
+        b = m-1
+        c = m
+        d = e-1
+
+        tmp = 0
+        while a < b and c < d: # Cycle reversal rotation (very fast on average)
+            tmp = arr[b]
+            arr[b] = arr[a]
             b -= 1
-        
-        self.blockSwap(arr, p, b - R + 1, R)
-    
-    def countRun(self, arr, a, b):
-        i = a + 1
-        while i < b and arr[i - 1] <= arr[i]: # Scan for ascending/equal run
-            i += 1
-        
-        if i >= b or i > a + 1 and arr[a] < arr[i - 1]: # If ascending, return
-            return i
-        
-        p = arr[a]
-        self.reverse(arr, a, i) # Flip current equal segment to invert stability
-        s = i
-        
-        while s < b and arr[s] < p: # Only continue if the next segment is less than the previous
-            c = arr[s]
-            i += 1
-            while i < b and arr[i] == c:
-                i += 1
-            
-            self.reverse(arr, s, i) # Invert stability
-            p = c
-            s = i
-        self.reverse(arr, a, i) # Reverse entire run
-        return i
-    
-    def buildRuns(self, arr, a, b, r):
-        mono = True
+            arr[a] = arr[c]
+            a += 1
+            arr[c] = arr[d]
+            c += 1
+            arr[d] = tmp
+            d -= 1
         while a < b:
-            curr = self.countRun(arr, a, b)
-            if curr == b:
-                break
+            tmp = arr[b]
+            arr[b] = arr[a]
+            b -= 1
+            arr[a] = arr[d]
+            a += 1
+            arr[d] = tmp
+            d -= 1
+        while c < d:
+            tmp = arr[c]
+            arr[c] = arr[d]
+            c += 1
+            arr[d] = arr[a]
+            d -= 1
+            arr[a] = tmp
+            a += 1
+        if a < d:
+            self.reverse(arr, a, d+1)
+
+    def redistBuffer(self, arr, start, mid, end): # Modified block swap merge - original implementation from https://sortingalgos.miraheze.org/wiki/Rotate_Merge_Sort#Block-Swap_Merge
+        rotate = self.rotate
+        
+        leftLen = mid-start
+        rightLen = end-mid
+        while min(leftLen, rightLen) > max(self.sizeSmall, 0 if self.buffer is None else len(self.buffer)):
+            leftLen = mid-start
+            rightLen = end-mid
             
-            mono = False
+            forward = leftLen <= rightLen
             
-            rLen = curr - a
-            
-            if rLen < r:
-                ext = min(a + r, b)
-                self.bSort(arr, a, ext, curr)
-                a = ext
-                continue
-            
-            a = curr - (rLen & (r - 1))
-            if a == curr:
-                continue
-            
-            ext = min(a + r, b)
-            self.bSort(arr, a, ext, curr)
-            a = ext
-        
-        return mono
-    
-    def smartCollect(self, arr, a, b, q, r):
-        kA = b - 1 # Key start
-        k = 1 # Immediately absorb first value as key
-        
-        rP = b - 2
-        nxt = kA - ((kA - a) & (r - 1)) # Initialise next run start as start of last run
-        
-        while nxt >= a and k < q: # Search until start is reached or keys meet target
-            kP = kA + k - 1
-            while rP >= nxt and k < q:
-                kP = self.expSearchBW(arr, arr[rP], kA, kP + 1, False) - 1
-                if kP < kA or arr[kP] != arr[rP]:
-                    self.rotate(arr, rP + 1, kA, kA + k)
-                    ofs = kA - rP - 1
-                    kP -= ofs
-                    self.insertRight(arr, rP, kP)
-                    kA -= ofs + 1
-                    k += 1
-                rP = self.expSearchBW(arr, arr[kP], nxt, rP, False) - 1
-            
-            if k >= r:
-                for left in range(a, nxt, 2 * r):
-                    mid = left + r
-                    right = min(left + 2 * r, nxt)
-                    
-                    if mid >= right:
-                        break
-                    
-                    ls, rs = self.shrinkBounds(arr, left, mid, right)
-                    if ls < 0:
-                        continue
-                    
-                    if ls <= rs:
-                        self.mergeFW(arr, ls, mid, rs, kA)
-                    else:
-                        self.mergeBW(arr, ls, mid, rs, kA)
-                
-                self.shellsort(arr, kA, kA + self.lastUsed)
-                self.lastUsed = 0
-                r *= 2
-            
-            nxt -= ((nxt - a - 1) & (r - 1)) + 1
-        
-        self.rotate(arr, kA, kA + k, b)
-        
-        if k <= self.minRun // 2:
-            l = kA - ((kA - a) & (r - 1))
-            self.buildRuns(arr, l, b, self.minRun)
-            return 0
-        elif k < q:
-            k = self.floorPow2(k)
-        
-        l = kA - ((kA - a) & (r - 1))
-        
-        frag = 0
-        prev = r
-        
-        while l < b - k:
-            m = l + 1
-            while m < b - k and arr[m - 1] <= arr[m]:
-                m += 1
-            
-            if r > self.minRun and m - l <= r // 2 and prev + m - l <= r:
-                r //= 2
-                frag &= (r - 1)
-            
-            prev = m - l
-            ls, rs = self.shrinkBounds(arr, l - frag, l, l + min(r - frag, prev))
-            if ls >= 0:
-                if l - ls <= rs - l:
-                    self.mergeFW(arr, ls, l, rs, b - k)
-                else:
-                    self.mergeBW(arr, ls, l, rs, b - k)
-            frag = (frag + prev) & (r - 1)
-            l = m
-        
-        while r <= k:
-            for left in range(a, b - k, 2 * r):
-                mid = left + r
-                right = min(left + 2 * r, b - k)
-                
-                if mid >= right:
-                    break
-                
-                ls, rs = self.shrinkBounds(arr, left, mid, right)
-                if ls < 0:
-                    continue
-                
-                if mid - ls <= rs - mid:
-                    self.mergeFW(arr, ls, mid, rs, b - k)
-                else:
-                    self.mergeBW(arr, ls, mid, rs, b - k)
-            r *= 2
-        
-        self.shellsort(arr, b - k, b - k + self.lastUsed)
-        self.lastUsed = 0
-        
-        return k
-    
-    def redistBuffer(self, arr, a, m, b):
-        L = m - a
-        R = b - m
-        while min(L, R) > self.minRun:
-            L = m - a
-            R = b - m
-            
-            fw = (L <= R)
-            if fw:
-                if arr[a] > arr[m + L - 1]:
-                    p = self.expSearchFW(arr, arr[a], m + L - 1, b, True)
-                    self.rotate(arr, a, m, p)
-                    d = p - m
-                    a += d + 1
-                    m += d
-                    L -= 1
-                    continue
+            if forward:
+                if arr[start] > arr[mid+leftLen]:
+                    pos = self.expSearchForward(arr, arr[start], mid+leftLen, end, False)
+                    rotate(arr, start, mid, pos)
+                    dist = pos-mid
+                    start += dist+1
+                    mid += dist
+                    leftLen -= 1
             else:
-                if arr[b - 1] < arr[m - R]:
-                    p = self.expSearchBW(arr, arr[b - 1], a, m - R, False)
-                    self.rotate(arr, p, m, b)
-                    d = m - p
-                    b -= d + 1
-                    m -= d
-                    R -= 1
-                    continue
+                if arr[end-1] < arr[mid-rightLen]:
+                    pos = self.expSearchBackward(arr, arr[end-1], start, mid-rightLen, True)
+                    rotate(arr, pos, mid, end)
+                    dist = mid-pos
+                    end -= dist+1
+                    mid -= dist
+                    rightLen -= 1
             
             lo = 0
-            hi = min(L, R)
+            hi = min(leftLen, rightLen)
             while lo < hi:
-                q = (lo + hi) // 2
-                if arr[m - 1 - q] > arr[m + q]:
-                    lo = q + 1
+                m = (lo+hi)//2
+                if arr[mid-1-m] > arr[mid+m]:
+                    lo = m+1
                 else:
-                    hi = q
+                    hi = m
             d = lo
             
-            self.blockSwap(arr, m - d, m, d)
+            self.blockSwapForward(arr, mid-d, mid, d)
             
-            if fw:
-                self.lazyMerge(arr, a, m - d, m, True)
-                a = m
-                m += d
+            if forward:
+                self.lazyStableMerge(arr, start, mid-d, mid, False)
+                start = mid
+                mid += d
             else:
-                self.lazyMerge(arr, m, m + d, b, True)
-                b = m
-                m -= d
-        self.lazyMerge(arr, a, m, b, True)
+                self.lazyStableMerge(arr, mid, mid+d, end, False)
+                end = mid
+                mid -= d
+        
+        self.lazyStableMerge(arr, start, mid, end, False)
     
-    def lazyStableSort(self, arr, a, b, built):
-        if not built and self.buildRuns(arr, a, b, self.minRun):
+    def fulcrumPartition(self, arr, head, tail):
+        pivotIndex = head+(tail-head+1)//2
+        pivot = arr[pivotIndex]
+        self.swap(arr, pivotIndex, head)
+
+        while True:
+            while arr[tail] > pivot: 
+                tail -= 1
+            if head >= tail:
+                arr[head] = pivot
+                return head
+            arr[head] = arr[tail]
+            head += 1
+
+            while arr[head] <= pivot:
+                head += 1
+            if head >= tail:
+                arr[tail] = pivot
+                return tail
+            arr[tail] = arr[head]
+            tail -= 1
+
+    def quickselect(self, arr, k, start, end):
+        head = start
+        tail = end-1
+
+        while True:
+            pos = self.fulcrumPartition(arr, head, tail)
+            if pos == k:
+                return arr[pos]
+            elif pos > k:
+                tail = pos-1
+            else:
+                head = pos+1
+    
+    def trySmallSort(self, arr, start, end): # Run-aware exponential insertion sort (consider lazy stable insertion?)
+        if end-start <= 2*self.sizeSmall:
+            hint = self.countRun(arr, start, end)
+            self.expSort(arr, start, end, hint)
+            return True
+        return False
+    
+    def blockSetup(self, arr, start, end):
+        n = end-start
+        self.blockLen = self.sqrtPow2(n)
+        
+        while 2*self.blockLen <= self.mem:
+            self.blockLen *= 2
+        
+        if self.blockLen > self.mem:
+            self.buffer = None if self.mem == 0 else [0] * (min(self.mem, 8))
+        else:
+            self.buffer = [0] * (self.blockLen)
+        
+        if self.blockLen == self.sizeSmall or self.buffer is not None and len(self.buffer) == self.blockLen:
+            bufferTarget = 0
+        else:
+            bufferTarget = self.blockLen
+        
+        self.tagsLen = n//self.blockLen
+        target = bufferTarget+self.tagsLen
+        
+        self.keys = self.smartCollectBackward(arr, start, end, target)
+        
+        if self.keys == 0:
             return
         
-        n = b - a
+        self.tagsStart = end-self.keys
+        if self.keys < target:
+            self.blockLen = self.sqrtPow2(2*self.minRun)
+            self.tagsLen = (2*self.minRun)//self.blockLen
         
-        N = self.minRun
-        while N < n:
-            for left in range(a, b, 2 * N):
-                mid = left + N
-                right = min(left + 2 * N, b)
+        self.bufferStart = self.tagsStart+self.tagsLen
+        self.bufferLen = max(0, self.keys-self.tagsLen)
+        
+        self.recheck = (self.keys < target)
+        self.smartTagSort = (self.blockLen > self.sizeSmall and not self.recheck)
+        
+        if self.smartTagSort:
+            if self.tagsStart+self.lastBuffer > self.bufferStart:
+                self.quickselect(arr, self.bufferStart, self.tagsStart, self.tagsStart+self.lastBuffer)
+                self.shellsort(arr, self.tagsStart, self.bufferStart)
+                self.lastBuffer -= self.tagsLen
+            else:
+                self.shellsort(arr, self.tagsStart, self.tagsStart+self.lastBuffer)
+                self.lastBuffer = 0
+    
+    def recalcBlockLen(self, mergeN):
+        root = self.sqrtPow2(2*mergeN)
+        
+        if 2*root+(2*mergeN)//(2*root) < self.keys:
+            root *= 2
+        
+        tagCount = (2*mergeN)//root
+        if tagCount < self.keys:
+            self.bufferLen = self.keys-tagCount
+            self.bufferStart = self.tagsStart+tagCount
+        else:
+            while (2*mergeN)//root > self.keys:
+                root *= 2
+            self.bufferLen = 0
+        self.blockLen = root
+    
+    def lazyStableLoop(self, arr, start, end):
+        n = end-start
+        mergeN = self.minRun
+        while mergeN < n:
+            for left in range(start, end, 2*mergeN):
+                mid = min(left+mergeN, end)
+                right = min(mid+mergeN, end)
                 
-                if mid >= right:
+                if mid == right:
                     break
                 
-                ls, rs = self.shrinkBounds(arr, left, mid, right)
-                if ls < 0:
+                skip, l, r = self.checkBounds(arr, left, mid, right, False)
+                if skip:
                     continue
                 
-                self.redistBuffer(arr, ls, mid, rs) # maybe this is faster
-            N *= 2
+                self.lazyStableMerge(arr, l, mid, r, False)
+            mergeN *= 2
     
-    def sortInPlace(self, arr, a, b):
-        n = b - a
+    def blockMergeLoop(self, arr, start, end):
+        regionEnd = end-self.keys
+        n = regionEnd-start
         
-        if n <= 2 * self.minRun:
-            h = self.countRun(arr, a, b)
-            self.bSort(arr, a, b, h)
-            return
+        mergeN = self.minRun
+        while mergeN < n:
+            if self.recheck:
+                self.recalcBlockLen(mergeN)
         
-        if n <= (self.minRun * self.minRun) // 2:
-            self.lazyStableSort(arr, a, b, False)
-            return
-        
-        if self.buildRuns(arr, a, b, self.minRun):
-            return
-        
-        small = n <= self.minRun * self.minRun
-        
-        bLen = self.sqrtPow2(n)
-        
-        if small:
-            target = n // bLen
-        else:
-            target = bLen + n // bLen
-        
-        keys = self.smartCollect(arr, a, b, target, self.minRun)
-        b1 = b - keys
-        
-        if keys == 0:
-            self.lazyStableSort(arr, a, b, True)
-            return
-        
-        recalc = keys < target
-        
-        tLen = (n - keys) // bLen
-        t = b1
-        buf = b1 + tLen
-        bufLen = 0 if small else bLen
-        
-        N = max(self.minRun, 2 * self.floorPow2(keys))
-        
-        while N < n:
-            if recalc:
-                tLen1 = tLen
-                root = self.sqrtPow2(2 * N)
+            for left in range(start, regionEnd, 2*mergeN):
+                mid = min(left+mergeN, regionEnd)
+                right = min(mid+mergeN, regionEnd)
                 
-                while 2 * root + (2 * N) // (2 * root) < keys:
-                    root *= 2
-                
-                tLen = (2 * N) // root
-                if tLen <= keys:
-                    buf = b1 + tLen
-                    bufLen = keys - tLen
-                else:
-                    while (2 * N) // root > keys:
-                        root *= 2
-                    bufLen = 0
-                    tLen = (2 * N) // root
-                bLen = root
-                self.bSort(arr, t, t + tLen, t + tLen1)
-            
-            for left in range(a, b1, N * 2):
-                mid = min(left + N, b1)
-                right = min(left + 2 * N, b1)
-                
-                if mid >= right:
+                if mid == right:
                     break
                 
-                ls, rs = self.shrinkBounds(arr, left, mid, right)
-                
-                if ls < 0:
+                skip, l, r = self.checkBounds(arr, left, mid, right, False)
+                if skip:
                     continue
                 
-                if mid - ls > bLen:
-                    ls -= (ls - left) & (bLen - 1)
+                if mid-l > self.blockLen:
+                    l -= (l-start)%self.blockLen
                 
-                if min(rs - mid, mid - ls) <= self.minRun:
-                    self.lazyMerge(arr, ls, mid, rs, True)
-                if mid - ls <= bufLen:
-                    self.mergeFW(arr, ls, mid, rs, buf)
-                elif rs - mid <= bufLen:
-                    self.mergeBW(arr, ls, mid, rs, buf)
-                elif bLen <= bufLen:
-                    self.blockMerge(arr, ls, mid, rs, bLen, buf, t)
+                if min(mid-l, r-mid) <= self.blockLen:
+                    self.mergeDecide(arr, l, mid, r, False)
                 else:
-                    self.blockMergeNoBuf(arr, ls, mid, rs, bLen, t)
-            
-            N *= 2
+                    self.blockMerge(arr, l, mid, r)
+            mergeN *= 2
         
-        if recalc:
-            self.bSort(arr, t, b, t + tLen)
+        if self.smartTagSort:
+            self.shellsort(arr, self.bufferStart, self.bufferStart+self.lastBuffer)
         else:
-            self.shellsort(arr, buf, buf + self.lastUsed)
-        self.redistBuffer(arr, a, b1, b)
-    
-    def arrCopy(self, frm, a, to, b, n):
-        for i in range(n):
-            to[b + i] = frm[a + i]
-    
-    def mergeFWAux(self, arr, a, m, b, buf, c): # Assumes already in buffer
-        L = m - a
-        i = 0
-        while i < L and m < b:
-            if buf[c + i] <= arr[m]:
-                arr[a] = buf[c + i]
-                i += 1
-            else:
-                arr[a] = arr[m]
-                m += 1
-            a += 1
-        self.arrCopy(buf, i, arr, a, L - i)
-    
-    def mergeBWAux(self, arr, a, m, b, buf, c): # Assumes already in buffer
-        R = b - m
-        b -= 1; m -= 1
-        while R > 0 and m >= a:
-            if buf[c + R - 1] >= arr[m]:
-                arr[b] = buf[c + R - 1]
-                R -= 1
-            else:
-                arr[b] = arr[m]
-                m -= 1
-            b -= 1
-        self.arrCopy(buf, c, arr, b - R + 1, R)
-    
-    def mergeAux(self, arr, a, m, b, buf):
-        L = m - a
-        R = b - m
-        if L <= R:
-            self.arrCopy(arr, a, buf, 0, L)
-            self.mergeFWAux(arr, a, m, b, buf, 0)
-        else:
-            self.arrCopy(arr, m, buf, 0, R)
-            self.mergeBWAux(arr, a, m, b, buf, 0)
-    
-    def mergeTo(self, arr, a, L, R, buf, b): # Lengths for convenience
-        i = a + L
-        while L > 0 and R > 0:
-            if arr[a] <= arr[i]:
-                buf[b] = arr[a]
-                a += 1
-                L -= 1
-            else:
-                buf[b] = arr[i]
-                i += 1
-                R -= 1
-            b += 1
-        self.arrCopy(arr, a, buf, b, L)
-        b += L
-        self.arrCopy(arr, i, buf, b, R)
-    
-    def mergeFour(self, arr, a, W, X, Y, Z, buf):
-        mergeL = (arr[a + W - 1] > arr[a + W])
-        mergeR = (arr[a + W + X + Y - 1] > arr[a + W + X + Y])
-        if mergeL:
-            self.mergeTo(arr, a, W, X, buf, 0)
-        if mergeR:
-            self.mergeTo(arr, a + W + X, Y, Z, buf, W + X)
-        if mergeR and not mergeL:
-            self.mergeBWAux(arr, a, a + W + X, a + W + X + Y + Z, buf, W + X)
-            return
-        if mergeL and not mergeR:
-            self.mergeFWAux(arr, a, a + W + X, a + W + X + Y + Z, buf, 0)
-            return
-        if not (mergeL or mergeR) and arr[a + W + X - 1] > arr[a + W + X]:
-            self.mergeAux(arr, a, a + W + X, a + W + X + Y + Z, buf)
-            return
-        elif not (mergeL or mergeR):
-            return
-        self.mergeTo(buf, 0, W + X, Y + Z, arr, a)
-    
-    def scrollMergeAux(self, arr, p, a, m, left):
-        i = m
-        if left:
-            while a < m:
-                if arr[a] <= arr[i]:
-                    arr[p] = arr[a]
-                    a += 1
-                else:
-                    arr[p] = arr[i]
-                    i += 1
-                p += 1
-        else:
-            while a < m:
-                if arr[a] < arr[i]:
-                    arr[p] = arr[a]
-                    a += 1
-                else:
-                    arr[p] = arr[i]
-                    i += 1
-                p += 1
-        return i
-    
-    def tailMergeAux(self, arr, p, a, m, b, buf, bLen):
-        i = m
+            self.shellsort(arr, regionEnd, end)
         
-        while a < m and i < b:
-            if arr[a] <= arr[i]:
-                arr[p] = arr[a]
-                a += 1
-            else:
-                arr[p] = arr[i]
-                i += 1
-            p += 1
+        self.redistBuffer(arr, start, regionEnd, end)
         
-        if a < m:
-            if a > p:
-                self.arrCopy(arr, a, arr, p, m - a)
-            self.arrCopy(buf, 0, arr, b - bLen, bLen)
+    def sort(self, arr, start, end):
+        n = end-start
+        
+        if self.trySmallSort(arr, start, end):
             return
         
-        a = 0
-        while a < bLen and i < b:
-            if buf[a] <= arr[i]:
-                arr[p] = buf[a]
-                a += 1
-            else:
-                arr[p] = arr[i]
-                i += 1
-            p += 1
-        
-        self.arrCopy(buf, a, arr, p, bLen - a)
-    
-    def blockMergeAux(self, arr, a, m, b, bLen, buf, tags):
-        a1 = a + bLen
-        lenL = m - a1
-        lenR = b - m
-        
-        countL = lenL // bLen
-        countR = lenR // bLen
-        rem = lenR & (bLen - 1)
-        bCount = countL + countR
-        
-        for i in range(bCount):
-            tags[i] = i
-        
-        for i in range(bLen):
-            buf[i] = arr[m - bLen + i]
-            arr[m - bLen + i] = arr[a + i]
-        
-        self.insertRight(tags, 0, countL - 1)
-        
-        midTag = self.blockSelectSort(arr, a1, bCount, bLen, countL, tags, 0)
-        
-        f = a1
-        left = tags[0] < tags[midTag]
-        for i in range(1, bCount):
-            nxt = a1 + i * bLen
-            if left ^ (tags[i] < tags[midTag]):
-                f = self.scrollMergeAux(arr, f - bLen, f, nxt, left)
-                left = not left
-        
-        if left:
-            self.tailMergeAux(arr, f - bLen, f, b - rem, b, buf, bLen)
-        else:
-            self.tailMergeAux(arr, f - bLen, f, f, b, buf, bLen)
-    
-    def sortAux(self, arr, a, b, mem):
-        n = b - a
-        
-        if n < 2 * self.minRun:
-            hint = self.countRun(arr, a, b)
-            self.bSort(arr, a, b, hint)
+        if self.buildRuns(arr, start, end) < 2: # Only one run was found. No need to do anything else, so exit early.
             return
         
-        if n <= (self.minRun * self.minRun) // 2:
-            self.lazyStableSort(arr, a, b, False)
+        if n <= self.sizeSmall*4 or self.mem >= n//2:
+            self.buffer = [0] * (n//2)
+            self.lazyStableLoop(arr, start, end)
             return
         
-        if self.buildRuns(arr, 0, n, self.minRun):
+        self.blockSetup(arr, start, end)
+        
+        if self.keys == 0:
+            self.lazyStableLoop(arr, start, end)
             return
         
-        if mem < n // 2:
-            bLen = self.sqrtPow2(n)
-            
-            if mem < bLen: # If memory is insufficient, return to sorting in-place
-                self.sortInPlace(arr, a, b)
-                return
-            
-            while bLen < mem:
-                bLen *= 2
-            
-            tLen = n // bLen
-            
-            buf = [0] * bLen
-            tags = [0] * tLen
-        else:
-            bLen = min(mem, n)
-            if bLen < n:
-                bLen = n // 2
-            buf = [0] * bLen
+        regionEnd = self.tagsStart
         
-        N = self.minRun
-        
-        while N * 4 <= bLen:
-            i = a
-            while i + 4 * N <= b:
-                self.mergeFour(arr, i, N, N, N, N, buf)
-                i += 4 * N
-            if i + 3 * N < b:
-                self.mergeFour(arr, i, N, N, N, (b - a) & (N - 1), buf)
-            elif i + 2 * N < b:
-                mergeL = (arr[i + N - 1] > arr[i + N])
-                if mergeL:
-                    self.mergeTo(arr, i, N, N, buf, 0)
-                    self.mergeFWAux(arr, i, i + 2 * N, b, buf, 0)
-                else:
-                    l, r = self.shrinkBounds(arr, i, i + 2 * N, b)
-                    if l > 0:
-                        self.mergeAux(arr, l, i + 2 * N, r, buf)
-            elif i + N < b:
-                l, r = self.shrinkBounds(arr, i, i + N, b)
-                if l > 0:
-                    self.mergeAux(arr, l, i + N, r, buf)
-            N *= 4
-        
-        while N < n:
-            for left in range(a, b, 2 * N):
-                mid = left + N
-                right = min(left + N * 2, b)
-                
-                if mid >= right:
-                    break
-                
-                l, r = self.shrinkBounds(arr, left, mid, right)
-                if l < 0:
-                    continue
-                
-                lenL = mid - l
-                lenR = r - mid
-                
-                if min(lenL, lenR) > bLen:
-                    l -= (l - left) & (bLen - 1)
-                
-                if min(lenL, lenR) <= bLen:
-                    self.mergeAux(arr, l, mid, r, buf)
-                else:
-                    self.blockMergeAux(arr, l, mid, r, bLen, buf, tags)
-            N *= 2
+        self.blockMergeLoop(arr, start, end)
