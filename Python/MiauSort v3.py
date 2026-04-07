@@ -23,7 +23,6 @@ SOFTWARE.
 """
 
 class MiauSort:
-    smallMerge = 8
     minRun = 16
     lastUsed = 0
     
@@ -157,7 +156,6 @@ class MiauSort:
         c = m
         d = e - 1
         
-        tmp = 0
         while a < b and c < d: # Cycle reversal rotation (very fast on average)
             tmp = arr[b]
             arr[b] = arr[a]
@@ -177,7 +175,6 @@ class MiauSort:
             a += 1
             arr[d] = tmp
             d -= 1
-        
         while c < d:
             tmp = arr[c]
             arr[c] = arr[d]
@@ -266,7 +263,7 @@ class MiauSort:
         
         self.blockSwap(arr, p, bufPos + a, bLen - a)
     
-    def blockSelectSort(self, arr, a, bCount, bLen, lCount, tags, t):
+    def blockSelectSort(self, arr, a, bCount, bLen, lCount, t):
         midTag = lCount
         
         k = lCount+1
@@ -276,13 +273,13 @@ class MiauSort:
             minVal = arr[a + (j + 1) * bLen - 1]
             for i in range(max(j + 1, lCount-1), k):
                 bVal = arr[a + (i + 1) * bLen - 1]
-                if bVal < minVal or (bVal == minVal and tags[t + i] < tags[t + minIdx]):
+                if bVal < minVal or (bVal == minVal and arr[t + i] < arr[t + minIdx]):
                     minIdx = i
                     minVal = bVal
             
             if minIdx != j:
                 self.blockSwap(arr, a + j * bLen, a + minIdx * bLen, bLen)
-                self.swap(tags, t + j, t + minIdx)
+                self.swap(arr, t + j, t + minIdx)
                 
                 if k < bCount and minIdx == k - 1:
                     k += 1
@@ -307,7 +304,7 @@ class MiauSort:
         self.triBlockSwap(arr, buf, m - bLen, a, bLen)
         self.insertRight(arr, t, t + countL - 1)
         
-        midTag = self.blockSelectSort(arr, a1, bCount, bLen, countL, arr, t)
+        midTag = self.blockSelectSort(arr, a1, bCount, bLen, countL, t)
         
         f = a1
         left = arr[t] < arr[midTag]
@@ -333,7 +330,7 @@ class MiauSort:
         
         self.blockSwap(arr, t + bCount - bufSwaps, buf, bufSwaps)
         
-        self.lastUsed = max(self.lastUsed, max(bLen, bufSwaps))
+        self.lastUsed = max(self.lastUsed, bLen)
     
     def lazyMerge(self, arr, a, m, b, left):
         if m - a <= b - m:
@@ -380,14 +377,14 @@ class MiauSort:
         rem = lenR & (bLen - 1)
         bCount = countL + countR
         
-        midTag = self.blockSelectSort(arr, a, bCount, bLen, countL, arr, t)
+        midTag = self.blockSelectSort(arr, a, bCount, bLen, countL, t)
         
         f = a
         left = arr[t] < arr[midTag]
         for i in range(1, bCount):
             if left ^ (arr[t + i] < arr[midTag]):
                 nxt = a + i * bLen
-                nxtB = self.expSearchFW(arr, arr[nxt-1], nxt, nxt + bLen, left)
+                nxtB = self.expSearchBW(arr, arr[nxt-1], nxt, nxt + bLen, left)
                 self.lazyMerge(arr, f, nxt, nxtB, left)
                 f = nxtB
                 left = not left
@@ -395,7 +392,6 @@ class MiauSort:
         if left and rem > 0:
             self.lazyMerge(arr, f, b-rem, b, True)
         
-        j = 1
         for c in range(midTag+1, t + bCount):
             if arr[c] <= arr[midTag]:
                 self.insertLeft(arr, c, midTag)
@@ -509,9 +505,7 @@ class MiauSort:
         while nxt >= a and k < q: # Search until start is reached or keys meet target
             kP = kA + k - 1
             while rP >= nxt and k < q:
-                while kP >= kA and arr[kP] > arr[rP]:
-                    kP -= 1
-                
+                kP = self.expSearchBW(arr, arr[rP], kA, kP + 1, False) - 1
                 if kP < kA or arr[kP] != arr[rP]:
                     self.rotate(arr, rP + 1, kA, kA + k)
                     ofs = kA - rP - 1
@@ -519,7 +513,7 @@ class MiauSort:
                     self.insertRight(arr, rP, kP)
                     kA -= ofs + 1
                     k += 1
-                rP -= 1
+                rP = self.expSearchBW(arr, arr[kP], nxt, rP, False) - 1
             
             if k >= r:
                 for left in range(a, nxt, 2 * r):
@@ -746,9 +740,9 @@ class MiauSort:
                 if mid - ls > bLen:
                     ls -= (ls - left) & (bLen - 1)
                 
-                if min(rs - mid, mid - ls) <= self.smallMerge:
+                if min(rs - mid, mid - ls) <= self.minRun:
                     self.lazyMerge(arr, ls, mid, rs, True)
-                elif mid - ls <= bufLen:
+                if mid - ls <= bufLen:
                     self.mergeFW(arr, ls, mid, rs, buf)
                 elif rs - mid <= bufLen:
                     self.mergeBW(arr, ls, mid, rs, buf)
@@ -768,6 +762,14 @@ class MiauSort:
     def arrCopy(self, frm, a, to, b, n):
         for i in range(n):
             to[b + i] = frm[a + i]
+    
+    def safeCopy(self, arr, a, b, n):
+        if a > b:
+            for i in range(n):
+                arr[b + i] = arr[a + i]
+        else:
+            for i in range(n - 1, -1, -1):
+                arr[b + i] = arr[a + i]
     
     def mergeFWAux(self, arr, a, m, b, buf, c): # Assumes already in buffer
         L = m - a
@@ -893,32 +895,60 @@ class MiauSort:
         
         self.arrCopy(buf, a, arr, p, bLen - a)
     
-    def blockMergeAux(self, arr, a, m, b, bLen, buf, tags):
-        a1 = a + bLen
-        lenL = m - a1
-        lenR = b - m
+    def blockCycle(self, arr, a, lCount, rCount, bLen, tags, buf):
+        tags[0] = (lCount - 1) << 1
+        l = 0
+        m = lCount
+        r = m
+        b = m + rCount
+        o = 1
+        while l < m - 1 and r < b:
+            if arr[a + (l + 1) * bLen - 1] <= arr[a + (r + 1) * bLen - 1]:
+                tags[o] = l << 1
+                l += 1
+            else:
+                tags[o] = (r << 1) | 1
+                r += 1
+            o += 1
+        while l < m - 1:
+            tags[o] = l << 1
+            l += 1
+            o += 1
+        while r < b:
+            tags[o] = (r << 1) | 1
+            r += 1
+            o += 1
         
-        countL = lenL // bLen
-        countR = lenR // bLen
-        rem = lenR & (bLen - 1)
-        bCount = countL + countR
+        total = lCount + rCount
+        for i in range(total):
+            if (tags[i] >> 1) != i:
+                self.arrCopy(arr, a + i * bLen, buf, 0, bLen)
+                j = i
+                nxt = (tags[i] >> 1)
+                while nxt != i:
+                    self.safeCopy(arr, a + nxt * bLen, a + j * bLen, bLen)
+                    tags[j] = (j << 1) | (tags[j] & 1)
+                    j = nxt
+                    nxt = (tags[nxt] >> 1)
+                self.arrCopy(buf, 0, arr, a + j * bLen, bLen)
+                tags[j] = (j << 1) | (tags[j] & 1)
+    
+    def blockMergeAux(self, arr, a, m, b, bLen, tags, buf):
+        leftLen = m - a
+        rightLen = b - m
+        lCount = leftLen // bLen
+        rCount = rightLen // bLen
+        bCount = lCount + rCount
+        rem = rightLen & (bLen - 1)
         
-        for i in range(bCount):
-            tags[i] = i
+        self.blockCycle(arr, a, lCount, rCount, bLen, tags, buf)
+        self.arrCopy(arr, a, buf, 0, bLen)
         
-        for i in range(bLen):
-            buf[i] = arr[m - bLen + i]
-            arr[m - bLen + i] = arr[a + i]
-        
-        self.insertRight(tags, 0, countL - 1)
-        
-        midTag = self.blockSelectSort(arr, a1, bCount, bLen, countL, tags, 0)
-        
-        f = a1
-        left = tags[0] < tags[midTag]
-        for i in range(1, bCount):
-            nxt = a1 + i * bLen
-            if left ^ (tags[i] < tags[midTag]):
+        f = a + bLen
+        left = (tags[1] & 1) == 0
+        for i in range(2, bCount):
+            if left ^ ((tags[i] & 1) == 0):
+                nxt = a + i * bLen
                 f = self.scrollMergeAux(arr, f - bLen, f, nxt, left)
                 left = not left
         
@@ -1004,10 +1034,8 @@ class MiauSort:
                 if min(lenL, lenR) > bLen:
                     l -= (l - left) & (bLen - 1)
                 
-                if min(lenL, lenR) <= self.smallMerge:
-                    self.lazyMerge(arr, l, mid, r, False)
-                elif min(lenL, lenR) <= bLen:
+                if min(lenL, lenR) <= bLen:
                     self.mergeAux(arr, l, mid, r, buf)
                 else:
-                    self.blockMergeAux(arr, l, mid, r, bLen, buf, tags)
+                    self.blockMergeAux(arr, l, mid, r, bLen, tags, buf)
             N *= 2
