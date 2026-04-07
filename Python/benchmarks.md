@@ -2,12 +2,12 @@
 | Distribution | Description |
 |--------------|-------------|
 | gen_random | Even random permutation of integers 0 - n |
-| gen_noisy | Permutation of integers 0 - n in which items are O(sqrt n) from their sorted position at most |
-| gen_few_random | Permutation of integers 0 - n in which only n/20 items are swapped |
-| gen_sqrtn_unique | Even random permutation of integers 0 - sqrt n |
+| gen_noisy | Random permutation of integers 0 - n in which items are O(sqrt n) from their sorted position |
+| gen_few_random | Random permutation of integers 0 - n in which only n/20 items are swapped |
+| gen_sqrtn_unique | Even random permutation of integers 0 - sqrt n with each value repeated sqrt n times |
 | gen_sorted | Sorted array of integers 0 - n |
 | gen_reversed | Reverse sorted array of integers 0 - n |
-| gen_reversed_steps| Reverse sorted array of integers 0 - n/2 |
+| gen_reversed_steps | Reverse sorted array of integers 0 - n/2 with each value repeated twice |
 
 ## Mean of 50 runs (gen_random)
 
