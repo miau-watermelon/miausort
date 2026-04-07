@@ -18,4 +18,4 @@ Acknowledgements:
 - bzy ([github](https://github.com/bzyjin), [codeberg](https://codeberg.org/bzy/))  for help with optimised key collection (ideas from [dustsort](https://github.com/bzyjin/dustsort/tree/main)) and also help with debugging
 
 # Python benchmarks:
-Moving these to a separate file in the repo for better organization.
+Now [here](https://github.com/miau-watermelon/miausort/blob/main/Python/benchmarks.md).
