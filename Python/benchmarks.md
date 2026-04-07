@@ -1,3 +1,14 @@
+## Key:
+| Distribution | Description |
+|--------------|-------------|
+| gen_random | Even random permutation of integers 0 - n |
+| gen_noisy | Permutation of integers 0 - n in which items are O(sqrt n) from their sorted position at most |
+| gen_few_random | Permutation of integers 0 - n in which only n/20 items are swapped |
+| gen_sqrtn_unique | Even random permutation of integers 0 - sqrt n |
+| gen_sorted | Sorted array of integers 0 - n |
+| gen_reversed | Reverse sorted array of integers 0 - n |
+| gen_reversed_steps| Reverse sorted array of integers 0 - n/2 |
+
 ## Mean of 50 runs (gen_random)
 
 ### Array length 10
@@ -51,7 +62,7 @@
 | Miausort v3 (sqrt n) | 15.10 | 15.02 | 0.26 | 0.13 | 14.20 | 15.35 | 100.0% |
 | Timsort | 17.70 | 17.54 | 0.41 | 0.35 | 16.48 | 18.03 | 100.0% |
 | Introsort | 7.46 | 7.52 | 0.19 | 0.10 | 7.39 | 8.69 | 100.0% |
-## Mean of 50 runs (gen_low_inv)
+## Mean of 50 runs (gen_noisy)
 
 ### Array length 10
 
@@ -104,7 +115,7 @@
 | Miausort v3 (sqrt n) | 6.97 | 6.97 | 0.06 | 0.09 | 6.87 | 7.09 | 100.0% |
 | Timsort | 8.69 | 8.68 | 0.12 | 0.05 | 8.13 | 8.87 | 100.0% |
 | Introsort | 5.25 | 5.22 | 0.12 | 0.17 | 5.00 | 5.41 | 100.0% |
-## Mean of 50 runs (gen_low_exc)
+## Mean of 50 runs (gen_few_random)
 
 ### Array length 10
 
