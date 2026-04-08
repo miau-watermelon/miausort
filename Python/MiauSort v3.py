@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 class MiauSort:
+    smallMerge = 8
     minRun = 16
     lastUsed = 0
     
@@ -527,7 +528,7 @@ class MiauSort:
                     if ls < 0:
                         continue
                     
-                    if ls <= rs:
+                    if mid - ls <= rs - mid:
                         self.mergeFW(arr, ls, mid, rs, kA)
                     else:
                         self.mergeBW(arr, ls, mid, rs, kA)
@@ -540,7 +541,7 @@ class MiauSort:
         
         self.rotate(arr, kA, kA + k, b)
         
-        if k <= self.minRun // 2:
+        if k <= self.smallMerge:
             l = kA - ((kA - a) & (r - 1))
             self.buildRuns(arr, l, b, self.minRun)
             return 0
@@ -597,7 +598,7 @@ class MiauSort:
     def redistBuffer(self, arr, a, m, b):
         L = m - a
         R = b - m
-        while min(L, R) > self.minRun:
+        while min(L, R) > self.smallMerge:
             L = m - a
             R = b - m
             
@@ -740,7 +741,7 @@ class MiauSort:
                 if mid - ls > bLen:
                     ls -= (ls - left) & (bLen - 1)
                 
-                if min(rs - mid, mid - ls) <= self.minRun:
+                if min(rs - mid, mid - ls) <= self.smallMerge:
                     self.lazyMerge(arr, ls, mid, rs, True)
                 if mid - ls <= bufLen:
                     self.mergeFW(arr, ls, mid, rs, buf)
@@ -798,6 +799,9 @@ class MiauSort:
         self.arrCopy(buf, c, arr, b - R + 1, R)
     
     def mergeAux(self, arr, a, m, b, buf):
+        a, b = self.shrinkBounds(arr, a, m, b)
+        if a < 0:
+            return
         L = m - a
         R = b - m
         if L <= R:
@@ -824,23 +828,36 @@ class MiauSort:
         self.arrCopy(arr, i, buf, b, R)
     
     def mergeFour(self, arr, a, W, X, Y, Z, buf):
-        mergeL = (arr[a + W - 1] > arr[a + W])
-        mergeR = (arr[a + W + X + Y - 1] > arr[a + W + X + Y])
-        if mergeL:
+        b = a + W
+        c = b + X
+        d = c + Y
+        e = d + Z
+        
+        midL = a + W // 2
+        midR = d + Z // 2
+        shrinkL = arr[midL] <= arr[b]
+        shrinkR = arr[d - 1] <= arr[midR]
+        
+        if shrinkL and shrinkR:
+            self.mergeAux(arr, midL, b, c, buf)
+            self.mergeAux(arr, c, d, e, buf)
+            self.mergeAux(arr, a, c, e, buf)
+            return
+        
+        if shrinkL:
+            self.mergeAux(arr, midL, b, c, buf)
+            self.mergeTo(arr, c, Y, Z, buf, 0)
+            self.mergeBWAux(arr, a, c, e, buf, 0)
+            return
+        
+        if shrinkR:
+            self.mergeAux(arr, c, d, e, buf)
             self.mergeTo(arr, a, W, X, buf, 0)
-        if mergeR:
-            self.mergeTo(arr, a + W + X, Y, Z, buf, W + X)
-        if mergeR and not mergeL:
-            self.mergeBWAux(arr, a, a + W + X, a + W + X + Y + Z, buf, W + X)
+            self.mergeFWAux(arr, a, c, e, buf, 0)
             return
-        if mergeL and not mergeR:
-            self.mergeFWAux(arr, a, a + W + X, a + W + X + Y + Z, buf, 0)
-            return
-        if not (mergeL or mergeR) and arr[a + W + X - 1] > arr[a + W + X]:
-            self.mergeAux(arr, a, a + W + X, a + W + X + Y + Z, buf)
-            return
-        elif not (mergeL or mergeR):
-            return
+        
+        self.mergeTo(arr, a, W, X, buf, 0)
+        self.mergeTo(arr, c, Y, Z, buf, W + X)
         self.mergeTo(buf, 0, W + X, Y + Z, arr, a)
     
     def scrollMergeAux(self, arr, p, a, m, left):
@@ -1007,13 +1024,9 @@ class MiauSort:
                     self.mergeTo(arr, i, N, N, buf, 0)
                     self.mergeFWAux(arr, i, i + 2 * N, b, buf, 0)
                 else:
-                    l, r = self.shrinkBounds(arr, i, i + 2 * N, b)
-                    if l > 0:
-                        self.mergeAux(arr, l, i + 2 * N, r, buf)
+                    self.mergeAux(arr, i, i + 2 * N, b, buf)
             elif i + N < b:
-                l, r = self.shrinkBounds(arr, i, i + N, b)
-                if l > 0:
-                    self.mergeAux(arr, l, i + N, r, buf)
+                self.mergeAux(arr, i, i + N, b, buf)
             N *= 4
         
         while N < n:
