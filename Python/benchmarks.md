@@ -3,380 +3,501 @@
 |--------------|-------------|
 | gen_random | Even random permutation of integers 0 - n |
 | gen_noisy | Random permutation of integers 0 - n in which items are O(sqrt n) from their sorted position |
-| gen_few_random | Random permutation of integers 0 - n in which only n/20 items are swapped |
+| gen_few_rand | Random permutation of integers 0 - n in which only n/20 items are swapped |
+| gen_scrambled_head | 7/8 sorted, 1/8 random at start |
+| gen_scrambled_tail | 7/8 sorted, 1/8 random at end |
 | gen_sqrtn_unique | Even random permutation of integers 0 - sqrt n with each value repeated sqrt n times |
+| gen_pipe_organ | Half sorted from 0 - n/2, half reversed from n/2 - 0 | 
 | gen_sorted | Sorted array of integers 0 - n |
 | gen_reversed | Reverse sorted array of integers 0 - n |
 | gen_reversed_steps | Reverse sorted array of integers 0 - n/2 with each value repeated twice |
 
-## Mean of 50 runs (gen_random)
+# Benchmark (50 runs)
 
-### Array length 10
+## List length 10
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.02 | 100.0% |
-| Grailsort (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Miausort v2 (in-place) | 0.00 | 0.01 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Miausort v2 (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Miausort v3 (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Miausort v3 (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Timsort | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Introsort | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
+### gen_random
 
-### Array length 100
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Grailsort (in-place) | **0.00** | 0.00 | 0.00 |
+| Miausort v3 (in-place) | 0.00 | 0.00 | 0.01 |
+| Miausort v3 (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Grailsort (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Timsort | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (in-place) | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (sqrt n) | 0.00 | 0.00 | 0.00 |
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 0.17 | 0.18 | 0.03 | 0.01 | 0.17 | 0.34 | 100.0% |
-| Grailsort (sqrt n) | 0.16 | 0.16 | 0.01 | 0.01 | 0.15 | 0.22 | 100.0% |
-| Miausort v2 (in-place) | 0.17 | 0.18 | 0.00 | 0.00 | 0.17 | 0.19 | 100.0% |
-| Miausort v2 (sqrt n) | 0.18 | 0.18 | 0.00 | 0.00 | 0.18 | 0.19 | 100.0% |
-| Miausort v3 (in-place) | 0.12 | 0.13 | 0.01 | 0.01 | 0.12 | 0.18 | 100.0% |
-| Miausort v3 (sqrt n) | 0.12 | 0.13 | 0.01 | 0.01 | 0.12 | 0.14 | 100.0% |
-| Timsort | 0.07 | 0.07 | 0.00 | 0.00 | 0.07 | 0.08 | 100.0% |
-| Introsort | 0.03 | 0.03 | 0.00 | 0.00 | 0.03 | 0.04 | 100.0% |
+### gen_noisy
 
-### Array length 1000
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v3 (sqrt n) | **0.00** | 0.00 | 0.00 |
+| Grailsort (in-place) | 0.00 | 0.00 | 0.00 |
+| Miausort v3 (in-place) | 0.00 | 0.00 | 0.00 |
+| Grailsort (sqrt n) | 0.00 | 0.00 | 0.01 |
+| Timsort | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (in-place) | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (sqrt n) | 0.00 | 0.00 | 0.00 |
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 2.93 | 2.95 | 0.09 | 0.10 | 2.81 | 3.30 | 100.0% |
-| Grailsort (sqrt n) | 2.24 | 2.29 | 0.10 | 0.20 | 2.18 | 2.52 | 100.0% |
-| Miausort v2 (in-place) | 3.11 | 3.13 | 0.06 | 0.07 | 3.03 | 3.43 | 100.0% |
-| Miausort v2 (sqrt n) | 2.63 | 2.63 | 0.08 | 0.07 | 2.46 | 2.87 | 100.0% |
-| Miausort v3 (in-place) | 1.84 | 1.86 | 0.10 | 0.08 | 1.76 | 2.22 | 100.0% |
-| Miausort v3 (sqrt n) | 1.25 | 1.25 | 0.04 | 0.04 | 1.22 | 1.43 | 100.0% |
-| Timsort | 1.30 | 1.31 | 0.05 | 0.04 | 1.27 | 1.54 | 100.0% |
-| Introsort | 0.56 | 0.56 | 0.02 | 0.01 | 0.55 | 0.67 | 100.0% |
+### gen_few_rand
 
-### Array length 10000
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Grailsort (in-place) | **0.00** | 0.00 | 0.00 |
+| Miausort v3 (in-place) | 0.00 | 0.00 | 0.00 |
+| Miausort v3 (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Timsort | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (in-place) | 0.00 | 0.00 | 0.00 |
+| Grailsort (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (sqrt n) | 0.00 | 0.00 | 0.00 |
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 39.06 | 38.82 | 0.92 | 1.66 | 37.25 | 40.47 | 100.0% |
-| Grailsort (sqrt n) | 27.81 | 27.87 | 1.09 | 0.33 | 26.08 | 33.28 | 100.0% |
-| Miausort v2 (in-place) | 36.25 | 35.98 | 1.25 | 1.67 | 34.01 | 40.31 | 100.0% |
-| Miausort v2 (sqrt n) | 28.45 | 28.52 | 0.56 | 0.76 | 27.67 | 30.16 | 100.0% |
-| Miausort v3 (in-place) | 24.16 | 24.04 | 0.63 | 0.51 | 22.69 | 25.94 | 100.0% |
-| Miausort v3 (sqrt n) | 15.10 | 15.02 | 0.26 | 0.13 | 14.20 | 15.35 | 100.0% |
-| Timsort | 17.70 | 17.54 | 0.41 | 0.35 | 16.48 | 18.03 | 100.0% |
-| Introsort | 7.46 | 7.52 | 0.19 | 0.10 | 7.39 | 8.69 | 100.0% |
-## Mean of 50 runs (gen_noisy)
+### gen_scrambled_head
 
-### Array length 10
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Grailsort (in-place) | **0.00** | 0.00 | 0.00 |
+| Grailsort (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Miausort v3 (in-place) | 0.00 | 0.00 | 0.00 |
+| Miausort v3 (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (in-place) | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Timsort | 0.00 | 0.00 | 0.00 |
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Grailsort (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Miausort v2 (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Miausort v2 (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Miausort v3 (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Miausort v3 (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Timsort | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Introsort | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
+### gen_scrambled_tail
 
-### Array length 100
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v3 (in-place) | **0.00** | 0.00 | 0.00 |
+| Miausort v3 (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Grailsort (in-place) | 0.00 | 0.00 | 0.00 |
+| Timsort | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (in-place) | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Grailsort (sqrt n) | 0.00 | 0.00 | 0.00 |
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 0.17 | 0.17 | 0.00 | 0.00 | 0.17 | 0.19 | 100.0% |
-| Grailsort (sqrt n) | 0.13 | 0.13 | 0.02 | 0.00 | 0.13 | 0.29 | 100.0% |
-| Miausort v2 (in-place) | 0.06 | 0.06 | 0.00 | 0.00 | 0.06 | 0.08 | 100.0% |
-| Miausort v2 (sqrt n) | 0.07 | 0.07 | 0.00 | 0.00 | 0.07 | 0.08 | 100.0% |
-| Miausort v3 (in-place) | 0.04 | 0.04 | 0.01 | 0.00 | 0.04 | 0.08 | 100.0% |
-| Miausort v3 (sqrt n) | 0.04 | 0.04 | 0.00 | 0.00 | 0.03 | 0.04 | 100.0% |
-| Timsort | 0.04 | 0.04 | 0.00 | 0.00 | 0.04 | 0.05 | 100.0% |
-| Introsort | 0.02 | 0.02 | 0.00 | 0.00 | 0.02 | 0.02 | 100.0% |
+### gen_sqrtn_unique
 
-### Array length 1000
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Grailsort (in-place) | **0.00** | 0.00 | 0.00 |
+| Miausort v3 (in-place) | 0.00 | 0.00 | 0.00 |
+| Grailsort (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Miausort v3 (sqrt n) | 0.00 | 0.00 | 0.01 |
+| Timsort | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (in-place) | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (sqrt n) | 0.00 | 0.00 | 0.00 |
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 2.01 | 2.02 | 0.03 | 0.02 | 1.97 | 2.21 | 100.0% |
-| Grailsort (sqrt n) | 1.25 | 1.29 | 0.07 | 0.14 | 1.21 | 1.41 | 100.0% |
-| Miausort v2 (in-place) | 0.92 | 0.95 | 0.11 | 0.01 | 0.90 | 1.52 | 100.0% |
-| Miausort v2 (sqrt n) | 0.88 | 0.89 | 0.01 | 0.01 | 0.87 | 0.95 | 100.0% |
-| Miausort v3 (in-place) | 0.81 | 0.81 | 0.02 | 0.02 | 0.80 | 0.96 | 100.0% |
-| Miausort v3 (sqrt n) | 0.57 | 0.58 | 0.03 | 0.01 | 0.56 | 0.74 | 100.0% |
-| Timsort | 0.63 | 0.64 | 0.01 | 0.01 | 0.63 | 0.67 | 100.0% |
-| Introsort | 0.38 | 0.38 | 0.01 | 0.01 | 0.37 | 0.42 | 100.0% |
+### gen_pipe_organ
 
-### Array length 10000
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v3 (in-place) | **0.00** | 0.00 | 0.00 |
+| Miausort v3 (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Timsort | 0.00 | 0.00 | 0.00 |
+| Grailsort (in-place) | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (in-place) | 0.00 | 0.00 | 0.00 |
+| Grailsort (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (sqrt n) | 0.00 | 0.00 | 0.00 |
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 27.38 | 27.17 | 0.54 | 0.97 | 25.86 | 27.84 | 100.0% |
-| Grailsort (sqrt n) | 14.10 | 14.18 | 0.28 | 0.52 | 13.64 | 14.65 | 100.0% |
-| Miausort v2 (in-place) | 12.42 | 12.46 | 0.20 | 0.37 | 12.00 | 12.80 | 100.0% |
-| Miausort v2 (sqrt n) | 12.04 | 11.99 | 0.25 | 0.20 | 11.36 | 12.93 | 100.0% |
-| Miausort v3 (in-place) | 9.38 | 9.35 | 0.34 | 0.14 | 8.63 | 10.70 | 100.0% |
-| Miausort v3 (sqrt n) | 6.97 | 6.97 | 0.06 | 0.09 | 6.87 | 7.09 | 100.0% |
-| Timsort | 8.69 | 8.68 | 0.12 | 0.05 | 8.13 | 8.87 | 100.0% |
-| Introsort | 5.25 | 5.22 | 0.12 | 0.17 | 5.00 | 5.41 | 100.0% |
-## Mean of 50 runs (gen_few_random)
+### gen_sorted
 
-### Array length 10
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v3 (in-place) | **0.00** | 0.00 | 0.00 |
+| Miausort v2 (in-place) | 0.00 | 0.00 | 0.00 |
+| Miausort v3 (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Grailsort (in-place) | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Timsort | 0.00 | 0.00 | 0.00 |
+| Grailsort (sqrt n) | 0.00 | 0.00 | 0.00 |
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Grailsort (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Miausort v2 (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Miausort v2 (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Miausort v3 (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Miausort v3 (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Timsort | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Introsort | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
+### gen_reversed
 
-### Array length 100
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Timsort | **0.00** | 0.00 | 0.00 |
+| Miausort v3 (in-place) | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (in-place) | 0.00 | 0.00 | 0.00 |
+| Miausort v3 (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Grailsort (in-place) | 0.01 | 0.00 | 0.00 |
+| Grailsort (sqrt n) | 0.01 | 0.00 | 0.00 |
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 0.14 | 0.14 | 0.00 | 0.00 | 0.14 | 0.16 | 100.0% |
-| Grailsort (sqrt n) | 0.10 | 0.10 | 0.00 | 0.00 | 0.10 | 0.12 | 100.0% |
-| Miausort v2 (in-place) | 0.09 | 0.09 | 0.00 | 0.00 | 0.09 | 0.11 | 100.0% |
-| Miausort v2 (sqrt n) | 0.09 | 0.09 | 0.00 | 0.00 | 0.09 | 0.11 | 100.0% |
-| Miausort v3 (in-place) | 0.04 | 0.04 | 0.00 | 0.00 | 0.04 | 0.05 | 100.0% |
-| Miausort v3 (sqrt n) | 0.04 | 0.04 | 0.00 | 0.00 | 0.04 | 0.05 | 100.0% |
-| Timsort | 0.04 | 0.04 | 0.00 | 0.00 | 0.04 | 0.05 | 100.0% |
-| Introsort | 0.02 | 0.02 | 0.00 | 0.00 | 0.02 | 0.02 | 100.0% |
+### gen_reversed_steps
 
-### Array length 1000
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v3 (in-place) | **0.00** | 0.00 | 0.00 |
+| Miausort v3 (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (in-place) | 0.00 | 0.00 | 0.00 |
+| Timsort | 0.00 | 0.00 | 0.00 |
+| Grailsort (in-place) | 0.01 | 0.00 | 0.00 |
+| Grailsort (sqrt n) | 0.01 | 0.00 | 0.00 |
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 2.36 | 2.36 | 0.05 | 0.04 | 2.32 | 2.65 | 100.0% |
-| Grailsort (sqrt n) | 1.56 | 1.56 | 0.02 | 0.02 | 1.52 | 1.61 | 100.0% |
-| Miausort v2 (in-place) | 1.36 | 1.37 | 0.03 | 0.02 | 1.35 | 1.54 | 100.0% |
-| Miausort v2 (sqrt n) | 1.20 | 1.23 | 0.08 | 0.06 | 1.17 | 1.54 | 100.0% |
-| Miausort v3 (in-place) | 1.15 | 1.15 | 0.03 | 0.01 | 1.12 | 1.32 | 100.0% |
-| Miausort v3 (sqrt n) | 0.76 | 0.76 | 0.01 | 0.01 | 0.74 | 0.83 | 100.0% |
-| Timsort | 0.77 | 0.80 | 0.05 | 0.09 | 0.75 | 0.93 | 100.0% |
-| Introsort | 0.24 | 0.25 | 0.03 | 0.02 | 0.24 | 0.43 | 100.0% |
+## List length 100
 
-### Array length 10000
+### gen_random
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 34.75 | 34.70 | 0.59 | 0.40 | 32.85 | 36.46 | 100.0% |
-| Grailsort (sqrt n) | 21.43 | 21.50 | 0.30 | 0.37 | 20.83 | 22.36 | 100.0% |
-| Miausort v2 (in-place) | 19.89 | 20.13 | 0.50 | 0.91 | 19.07 | 21.02 | 100.0% |
-| Miausort v2 (sqrt n) | 15.28 | 15.33 | 0.29 | 0.29 | 14.93 | 16.20 | 100.0% |
-| Miausort v3 (in-place) | 16.22 | 16.39 | 0.62 | 1.18 | 15.42 | 17.35 | 100.0% |
-| Miausort v3 (sqrt n) | 9.99 | 10.07 | 0.28 | 0.36 | 9.73 | 11.07 | 100.0% |
-| Timsort | 10.44 | 10.48 | 0.16 | 0.22 | 10.24 | 10.86 | 100.0% |
-| Introsort | 3.84 | 3.83 | 0.09 | 0.15 | 3.69 | 4.03 | 100.0% |
-## Mean of 50 runs (gen_sqrtn_unique)
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Timsort | **0.07** | 0.00 | 0.00 |
+| Miausort v3 (in-place) | 0.13 | 0.00 | 0.00 |
+| Miausort v3 (sqrt n) | 0.13 | 0.00 | 0.01 |
+| Grailsort (sqrt n) | 0.18 | 0.01 | 0.01 |
+| Miausort v2 (sqrt n) | 0.18 | 0.02 | 0.01 |
+| Miausort v2 (in-place) | 0.20 | 0.04 | 0.02 |
+| Grailsort (in-place) | 0.22 | 0.01 | 0.01 |
 
-### Array length 10
+### gen_noisy
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Grailsort (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Miausort v2 (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Miausort v2 (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Miausort v3 (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Miausort v3 (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Timsort | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Introsort | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Timsort | **0.04** | 0.00 | 0.00 |
+| Miausort v3 (sqrt n) | 0.05 | 0.00 | 0.01 |
+| Miausort v3 (in-place) | 0.05 | 0.00 | 0.00 |
+| Miausort v2 (in-place) | 0.10 | 0.00 | 0.01 |
+| Miausort v2 (sqrt n) | 0.10 | 0.00 | 0.00 |
+| Grailsort (sqrt n) | 0.11 | 0.00 | 0.00 |
+| Grailsort (in-place) | 0.13 | 0.00 | 0.01 |
 
-### Array length 100
+### gen_few_rand
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 0.27 | 0.27 | 0.01 | 0.00 | 0.26 | 0.31 | 100.0% |
-| Grailsort (sqrt n) | 0.24 | 0.24 | 0.01 | 0.00 | 0.24 | 0.33 | 100.0% |
-| Miausort v2 (in-place) | 0.16 | 0.16 | 0.01 | 0.00 | 0.16 | 0.19 | 100.0% |
-| Miausort v2 (sqrt n) | 0.17 | 0.17 | 0.00 | 0.00 | 0.16 | 0.18 | 100.0% |
-| Miausort v3 (in-place) | 0.12 | 0.12 | 0.00 | 0.00 | 0.12 | 0.13 | 100.0% |
-| Miausort v3 (sqrt n) | 0.12 | 0.12 | 0.00 | 0.00 | 0.12 | 0.13 | 100.0% |
-| Timsort | 0.07 | 0.07 | 0.01 | 0.00 | 0.06 | 0.11 | 100.0% |
-| Introsort | 0.03 | 0.03 | 0.00 | 0.00 | 0.03 | 0.04 | 100.0% |
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Timsort | **0.05** | 0.00 | 0.00 |
+| Miausort v3 (sqrt n) | 0.05 | 0.00 | 0.01 |
+| Miausort v3 (in-place) | 0.06 | 0.00 | 0.00 |
+| Miausort v2 (sqrt n) | 0.09 | 0.00 | 0.00 |
+| Miausort v2 (in-place) | 0.09 | 0.01 | 0.01 |
+| Grailsort (sqrt n) | 0.10 | 0.00 | 0.00 |
+| Grailsort (in-place) | 0.15 | 0.02 | 0.04 |
 
-### Array length 1000
+### gen_scrambled_head
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 3.86 | 3.86 | 0.05 | 0.05 | 3.73 | 4.04 | 100.0% |
-| Grailsort (sqrt n) | 3.32 | 3.38 | 0.12 | 0.10 | 3.27 | 3.66 | 100.0% |
-| Miausort v2 (in-place) | 3.57 | 3.66 | 0.23 | 0.43 | 3.45 | 4.66 | 100.0% |
-| Miausort v2 (sqrt n) | 2.38 | 2.39 | 0.04 | 0.04 | 2.33 | 2.54 | 100.0% |
-| Miausort v3 (in-place) | 2.89 | 2.90 | 0.05 | 0.07 | 2.83 | 3.03 | 100.0% |
-| Miausort v3 (sqrt n) | 1.17 | 1.19 | 0.05 | 0.03 | 1.14 | 1.37 | 100.0% |
-| Timsort | 1.25 | 1.25 | 0.05 | 0.05 | 1.19 | 1.50 | 100.0% |
-| Introsort | 0.47 | 0.47 | 0.01 | 0.01 | 0.45 | 0.50 | 100.0% |
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Timsort | **0.02** | 0.00 | 0.00 |
+| Miausort v3 (in-place) | 0.03 | 0.00 | 0.00 |
+| Miausort v3 (sqrt n) | 0.03 | 0.00 | 0.01 |
+| Miausort v2 (in-place) | 0.07 | 0.00 | 0.01 |
+| Miausort v2 (sqrt n) | 0.07 | 0.00 | 0.00 |
+| Grailsort (sqrt n) | 0.13 | 0.00 | 0.01 |
+| Grailsort (in-place) | 0.16 | 0.01 | 0.01 |
 
-### Array length 10000
+### gen_scrambled_tail
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 47.61 | 47.63 | 1.00 | 2.08 | 46.36 | 49.34 | 100.0% |
-| Grailsort (sqrt n) | 39.35 | 39.16 | 0.88 | 1.40 | 37.14 | 41.03 | 100.0% |
-| Miausort v2 (in-place) | 37.32 | 37.05 | 0.83 | 1.59 | 35.35 | 38.10 | 100.0% |
-| Miausort v2 (sqrt n) | 28.07 | 27.91 | 0.58 | 0.85 | 26.45 | 29.16 | 100.0% |
-| Miausort v3 (in-place) | 32.02 | 31.88 | 0.51 | 0.84 | 30.98 | 33.43 | 100.0% |
-| Miausort v3 (sqrt n) | 14.19 | 14.22 | 0.19 | 0.14 | 14.07 | 15.38 | 100.0% |
-| Timsort | 16.38 | 16.50 | 0.27 | 0.42 | 16.21 | 17.08 | 100.0% |
-| Introsort | 6.08 | 6.12 | 0.14 | 0.22 | 5.86 | 6.60 | 100.0% |
-## Mean of 50 runs (gen_sorted)
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Timsort | **0.02** | 0.00 | 0.00 |
+| Miausort v3 (in-place) | 0.03 | 0.00 | 0.00 |
+| Miausort v3 (sqrt n) | 0.03 | 0.00 | 0.00 |
+| Miausort v2 (sqrt n) | 0.05 | 0.00 | 0.00 |
+| Miausort v2 (in-place) | 0.06 | 0.00 | 0.01 |
+| Grailsort (sqrt n) | 0.08 | 0.00 | 0.00 |
+| Grailsort (in-place) | 0.12 | 0.00 | 0.01 |
 
-### Array length 10
+### gen_sqrtn_unique
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Grailsort (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Miausort v2 (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Miausort v2 (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Miausort v3 (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Miausort v3 (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Timsort | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Introsort | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Timsort | **0.07** | 0.00 | 0.00 |
+| Miausort v3 (in-place) | 0.13 | 0.00 | 0.00 |
+| Miausort v3 (sqrt n) | 0.13 | 0.00 | 0.00 |
+| Miausort v2 (in-place) | 0.16 | 0.01 | 0.00 |
+| Miausort v2 (sqrt n) | 0.16 | 0.01 | 0.01 |
+| Grailsort (sqrt n) | 0.24 | 0.01 | 0.01 |
+| Grailsort (in-place) | 0.27 | 0.01 | 0.01 |
 
-### Array length 100
+### gen_pipe_organ
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 0.11 | 0.11 | 0.01 | 0.00 | 0.10 | 0.14 | 100.0% |
-| Grailsort (sqrt n) | 0.07 | 0.07 | 0.00 | 0.00 | 0.07 | 0.09 | 100.0% |
-| Miausort v2 (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Miausort v2 (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Miausort v3 (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Miausort v3 (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Timsort | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Introsort | 0.01 | 0.01 | 0.00 | 0.00 | 0.01 | 0.02 | 100.0% |
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Timsort | **0.02** | 0.00 | 0.00 |
+| Miausort v3 (in-place) | 0.06 | 0.00 | 0.01 |
+| Miausort v3 (sqrt n) | 0.06 | 0.00 | 0.00 |
+| Miausort v2 (sqrt n) | 0.09 | 0.00 | 0.00 |
+| Miausort v2 (in-place) | 0.09 | 0.00 | 0.00 |
+| Grailsort (sqrt n) | 0.14 | 0.00 | 0.01 |
+| Grailsort (in-place) | 0.18 | 0.01 | 0.04 |
 
-### Array length 1000
+### gen_sorted
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 1.65 | 1.65 | 0.05 | 0.02 | 1.62 | 1.94 | 100.0% |
-| Grailsort (sqrt n) | 0.88 | 0.88 | 0.02 | 0.01 | 0.84 | 0.98 | 100.0% |
-| Miausort v2 (in-place) | 0.05 | 0.05 | 0.00 | 0.00 | 0.04 | 0.05 | 100.0% |
-| Miausort v2 (sqrt n) | 0.04 | 0.04 | 0.00 | 0.00 | 0.04 | 0.05 | 100.0% |
-| Miausort v3 (in-place) | 0.04 | 0.04 | 0.00 | 0.00 | 0.04 | 0.05 | 100.0% |
-| Miausort v3 (sqrt n) | 0.04 | 0.04 | 0.00 | 0.00 | 0.04 | 0.05 | 100.0% |
-| Timsort | 0.05 | 0.05 | 0.00 | 0.00 | 0.04 | 0.05 | 100.0% |
-| Introsort | 0.22 | 0.22 | 0.01 | 0.01 | 0.21 | 0.27 | 100.0% |
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v2 (in-place) | **0.00** | 0.00 | 0.00 |
+| Miausort v3 (in-place) | 0.00 | 0.00 | 0.00 |
+| Miausort v3 (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Miausort v2 (sqrt n) | 0.00 | 0.00 | 0.00 |
+| Timsort | 0.00 | 0.00 | 0.00 |
+| Grailsort (sqrt n) | 0.07 | 0.00 | 0.00 |
+| Grailsort (in-place) | 0.10 | 0.00 | 0.01 |
 
-### Array length 10000
+### gen_reversed
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 23.58 | 23.49 | 0.62 | 0.63 | 22.10 | 26.65 | 100.0% |
-| Grailsort (sqrt n) | 10.88 | 10.88 | 0.10 | 0.16 | 10.66 | 11.09 | 100.0% |
-| Miausort v2 (in-place) | 0.50 | 0.50 | 0.01 | 0.01 | 0.49 | 0.52 | 100.0% |
-| Miausort v2 (sqrt n) | 0.48 | 0.49 | 0.01 | 0.01 | 0.47 | 0.52 | 100.0% |
-| Miausort v3 (in-place) | 0.48 | 0.48 | 0.01 | 0.01 | 0.47 | 0.51 | 100.0% |
-| Miausort v3 (sqrt n) | 0.48 | 0.49 | 0.02 | 0.02 | 0.47 | 0.64 | 100.0% |
-| Timsort | 0.50 | 0.50 | 0.02 | 0.01 | 0.48 | 0.59 | 100.0% |
-| Introsort | 3.46 | 3.44 | 0.11 | 0.17 | 3.28 | 3.74 | 100.0% |
-## Mean of 50 runs (gen_reversed)
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Timsort | **0.01** | 0.00 | 0.00 |
+| Miausort v2 (in-place) | 0.01 | 0.00 | 0.00 |
+| Miausort v3 (in-place) | 0.01 | 0.00 | 0.00 |
+| Miausort v2 (sqrt n) | 0.01 | 0.00 | 0.00 |
+| Miausort v3 (sqrt n) | 0.01 | 0.00 | 0.00 |
+| Grailsort (sqrt n) | 0.14 | 0.00 | 0.02 |
+| Grailsort (in-place) | 0.17 | 0.01 | 0.01 |
 
-### Array length 10
+### gen_reversed_steps
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 0.01 | 0.01 | 0.00 | 0.00 | 0.01 | 0.02 | 100.0% |
-| Grailsort (sqrt n) | 0.01 | 0.01 | 0.00 | 0.00 | 0.01 | 0.01 | 100.0% |
-| Miausort v2 (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Miausort v2 (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Miausort v3 (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Miausort v3 (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Timsort | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Introsort | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v2 (in-place) | **0.01** | 0.00 | 0.00 |
+| Miausort v3 (sqrt n) | 0.01 | 0.00 | 0.00 |
+| Miausort v3 (in-place) | 0.01 | 0.00 | 0.00 |
+| Miausort v2 (sqrt n) | 0.01 | 0.00 | 0.00 |
+| Timsort | 0.07 | 0.00 | 0.00 |
+| Grailsort (sqrt n) | 0.30 | 0.01 | 0.01 |
+| Grailsort (in-place) | 0.32 | 0.01 | 0.02 |
 
-### Array length 100
+## List length 1000
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 0.16 | 0.16 | 0.01 | 0.00 | 0.16 | 0.21 | 100.0% |
-| Grailsort (sqrt n) | 0.13 | 0.13 | 0.00 | 0.00 | 0.13 | 0.15 | 100.0% |
-| Miausort v2 (in-place) | 0.01 | 0.01 | 0.00 | 0.00 | 0.01 | 0.02 | 100.0% |
-| Miausort v2 (sqrt n) | 0.01 | 0.01 | 0.00 | 0.00 | 0.01 | 0.02 | 100.0% |
-| Miausort v3 (in-place) | 0.01 | 0.01 | 0.00 | 0.00 | 0.01 | 0.02 | 100.0% |
-| Miausort v3 (sqrt n) | 0.01 | 0.01 | 0.00 | 0.00 | 0.01 | 0.02 | 100.0% |
-| Timsort | 0.01 | 0.01 | 0.00 | 0.00 | 0.01 | 0.03 | 100.0% |
-| Introsort | 0.02 | 0.02 | 0.00 | 0.00 | 0.01 | 0.02 | 100.0% |
+### gen_random
 
-### Array length 1000
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v3 (sqrt n) | **1.27** | 0.09 | 0.08 |
+| Timsort | 1.33 | 0.04 | 0.03 |
+| Miausort v3 (in-place) | 1.94 | 0.15 | 0.11 |
+| Grailsort (sqrt n) | 2.43 | 0.08 | 0.06 |
+| Miausort v2 (sqrt n) | 2.79 | 0.06 | 0.04 |
+| Grailsort (in-place) | 3.05 | 0.05 | 0.04 |
+| Miausort v2 (in-place) | 3.20 | 0.08 | 0.06 |
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 2.37 | 2.39 | 0.15 | 0.04 | 2.31 | 3.41 | 100.0% |
-| Grailsort (sqrt n) | 1.71 | 1.71 | 0.02 | 0.01 | 1.68 | 1.79 | 100.0% |
-| Miausort v2 (in-place) | 0.15 | 0.15 | 0.01 | 0.00 | 0.14 | 0.19 | 100.0% |
-| Miausort v2 (sqrt n) | 0.15 | 0.15 | 0.01 | 0.00 | 0.14 | 0.19 | 100.0% |
-| Miausort v3 (in-place) | 0.15 | 0.15 | 0.00 | 0.00 | 0.15 | 0.15 | 100.0% |
-| Miausort v3 (sqrt n) | 0.15 | 0.15 | 0.02 | 0.00 | 0.15 | 0.30 | 100.0% |
-| Timsort | 0.07 | 0.07 | 0.00 | 0.00 | 0.07 | 0.08 | 100.0% |
-| Introsort | 0.25 | 0.25 | 0.00 | 0.00 | 0.24 | 0.27 | 100.0% |
+### gen_noisy
 
-### Array length 10000
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v3 (sqrt n) | **0.80** | 0.01 | 0.01 |
+| Timsort | 0.82 | 0.02 | 0.02 |
+| Miausort v3 (in-place) | 1.02 | 0.01 | 0.01 |
+| Grailsort (sqrt n) | 1.22 | 0.01 | 0.02 |
+| Miausort v2 (sqrt n) | 1.28 | 0.02 | 0.04 |
+| Miausort v2 (in-place) | 1.59 | 0.02 | 0.03 |
+| Grailsort (in-place) | 2.04 | 0.05 | 0.04 |
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 29.57 | 29.39 | 0.83 | 1.19 | 27.73 | 32.22 | 100.0% |
-| Grailsort (sqrt n) | 18.11 | 18.20 | 0.26 | 0.42 | 17.80 | 19.08 | 100.0% |
-| Miausort v2 (in-place) | 1.71 | 1.72 | 0.05 | 0.06 | 1.66 | 1.90 | 100.0% |
-| Miausort v2 (sqrt n) | 1.53 | 1.53 | 0.03 | 0.04 | 1.47 | 1.59 | 100.0% |
-| Miausort v3 (in-place) | 1.57 | 1.57 | 0.04 | 0.05 | 1.49 | 1.68 | 100.0% |
-| Miausort v3 (sqrt n) | 1.62 | 1.62 | 0.03 | 0.03 | 1.56 | 1.74 | 100.0% |
-| Timsort | 0.81 | 0.81 | 0.01 | 0.01 | 0.79 | 0.87 | 100.0% |
-| Introsort | 3.78 | 3.79 | 0.05 | 0.05 | 3.71 | 4.03 | 100.0% |
-## Mean of 50 runs (gen_reversed_steps)
+### gen_few_rand
 
-### Array length 10
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v3 (sqrt n) | **0.83** | 0.04 | 0.06 |
+| Timsort | 0.85 | 0.02 | 0.02 |
+| Miausort v3 (in-place) | 1.17 | 0.02 | 0.02 |
+| Miausort v2 (sqrt n) | 1.19 | 0.02 | 0.02 |
+| Miausort v2 (in-place) | 1.53 | 0.04 | 0.05 |
+| Grailsort (sqrt n) | 1.63 | 0.07 | 0.05 |
+| Grailsort (in-place) | 2.56 | 0.06 | 0.05 |
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 0.01 | 0.01 | 0.00 | 0.00 | 0.01 | 0.01 | 100.0% |
-| Grailsort (sqrt n) | 0.01 | 0.01 | 0.00 | 0.00 | 0.01 | 0.01 | 100.0% |
-| Miausort v2 (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Miausort v2 (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Miausort v3 (in-place) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Miausort v3 (sqrt n) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
-| Timsort | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.01 | 100.0% |
-| Introsort | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 100.0% |
+### gen_scrambled_head
 
-### Array length 100
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Timsort | **0.26** | 0.01 | 0.01 |
+| Miausort v3 (sqrt n) | 0.29 | 0.01 | 0.01 |
+| Miausort v3 (in-place) | 0.49 | 0.01 | 0.02 |
+| Miausort v2 (sqrt n) | 0.53 | 0.01 | 0.02 |
+| Miausort v2 (in-place) | 0.91 | 0.02 | 0.02 |
+| Grailsort (sqrt n) | 1.70 | 0.02 | 0.02 |
+| Grailsort (in-place) | 2.51 | 0.03 | 0.03 |
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 0.31 | 0.32 | 0.01 | 0.01 | 0.31 | 0.34 | 100.0% |
-| Grailsort (sqrt n) | 0.28 | 0.30 | 0.04 | 0.00 | 0.28 | 0.56 | 100.0% |
-| Miausort v2 (in-place) | 0.01 | 0.01 | 0.00 | 0.00 | 0.01 | 0.02 | 100.0% |
-| Miausort v2 (sqrt n) | 0.01 | 0.01 | 0.00 | 0.00 | 0.01 | 0.02 | 100.0% |
-| Miausort v3 (in-place) | 0.01 | 0.01 | 0.00 | 0.00 | 0.01 | 0.02 | 100.0% |
-| Miausort v3 (sqrt n) | 0.01 | 0.01 | 0.00 | 0.00 | 0.01 | 0.02 | 100.0% |
-| Timsort | 0.07 | 0.07 | 0.00 | 0.00 | 0.07 | 0.08 | 100.0% |
-| Introsort | 0.02 | 0.02 | 0.00 | 0.00 | 0.02 | 0.02 | 100.0% |
+### gen_scrambled_tail
 
-### Array length 1000
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Timsort | **0.32** | 0.02 | 0.02 |
+| Miausort v3 (sqrt n) | 0.34 | 0.02 | 0.01 |
+| Miausort v2 (sqrt n) | 0.61 | 0.02 | 0.09 |
+| Miausort v3 (in-place) | 0.69 | 0.04 | 0.03 |
+| Miausort v2 (in-place) | 0.80 | 0.02 | 0.04 |
+| Grailsort (sqrt n) | 1.23 | 0.04 | 0.02 |
+| Grailsort (in-place) | 2.00 | 0.06 | 0.09 |
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 3.51 | 3.52 | 0.05 | 0.04 | 3.45 | 3.72 | 100.0% |
-| Grailsort (sqrt n) | 2.85 | 2.85 | 0.03 | 0.03 | 2.80 | 2.94 | 100.0% |
-| Miausort v2 (in-place) | 0.15 | 0.15 | 0.01 | 0.00 | 0.14 | 0.24 | 100.0% |
-| Miausort v2 (sqrt n) | 0.15 | 0.15 | 0.00 | 0.00 | 0.14 | 0.15 | 100.0% |
-| Miausort v3 (in-place) | 0.15 | 0.15 | 0.01 | 0.00 | 0.14 | 0.20 | 100.0% |
-| Miausort v3 (sqrt n) | 0.15 | 0.15 | 0.00 | 0.00 | 0.15 | 0.16 | 100.0% |
-| Timsort | 1.13 | 1.14 | 0.03 | 0.01 | 1.10 | 1.24 | 100.0% |
-| Introsort | 0.25 | 0.25 | 0.01 | 0.00 | 0.24 | 0.33 | 100.0% |
+### gen_sqrtn_unique
 
-### Array length 10000
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v3 (sqrt n) | **1.26** | 0.03 | 0.03 |
+| Timsort | 1.29 | 0.03 | 0.03 |
+| Miausort v2 (sqrt n) | 2.51 | 0.15 | 0.08 |
+| Miausort v3 (in-place) | 2.93 | 0.08 | 0.08 |
+| Grailsort (sqrt n) | 3.45 | 0.03 | 0.03 |
+| Miausort v2 (in-place) | 3.60 | 0.08 | 0.06 |
+| Grailsort (in-place) | 4.00 | 0.04 | 0.06 |
 
-| Algorithm | Median (ms) | Mean (ms) | σ | IQR | Min | Max | Correct % |
-|-----------|------------|-----------|---|-----|-----|-----|-----------|
-| Grailsort (in-place) | 42.89 | 42.74 | 0.76 | 1.35 | 41.28 | 44.36 | 100.0% |
-| Grailsort (sqrt n) | 31.66 | 31.72 | 0.29 | 0.37 | 31.37 | 33.16 | 100.0% |
-| Miausort v2 (in-place) | 1.76 | 1.75 | 0.05 | 0.04 | 1.55 | 1.82 | 100.0% |
-| Miausort v2 (sqrt n) | 1.55 | 1.56 | 0.04 | 0.03 | 1.49 | 1.70 | 100.0% |
-| Miausort v3 (in-place) | 1.60 | 1.60 | 0.02 | 0.02 | 1.56 | 1.67 | 100.0% |
-| Miausort v3 (sqrt n) | 1.62 | 1.62 | 0.02 | 0.03 | 1.58 | 1.67 | 100.0% |
-| Timsort | 12.77 | 12.84 | 0.25 | 0.10 | 12.67 | 14.00 | 100.0% |
-| Introsort | 3.81 | 3.81 | 0.04 | 0.04 | 3.72 | 3.93 | 100.0% |
+### gen_pipe_organ
+
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Timsort | **0.19** | 0.01 | 0.01 |
+| Miausort v3 (sqrt n) | 0.25 | 0.01 | 0.01 |
+| Miausort v2 (sqrt n) | 0.44 | 0.01 | 0.01 |
+| Miausort v3 (in-place) | 0.47 | 0.01 | 0.03 |
+| Miausort v2 (in-place) | 0.59 | 0.01 | 0.01 |
+| Grailsort (sqrt n) | 1.71 | 0.02 | 0.03 |
+| Grailsort (in-place) | 2.49 | 0.02 | 0.03 |
+
+### gen_sorted
+
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v3 (sqrt n) | **0.04** | 0.00 | 0.00 |
+| Miausort v3 (in-place) | 0.04 | 0.00 | 0.00 |
+| Miausort v2 (in-place) | 0.04 | 0.00 | 0.00 |
+| Miausort v2 (sqrt n) | 0.04 | 0.00 | 0.00 |
+| Timsort | 0.05 | 0.00 | 0.00 |
+| Grailsort (sqrt n) | 0.87 | 0.02 | 0.02 |
+| Grailsort (in-place) | 1.69 | 0.02 | 0.03 |
+
+### gen_reversed
+
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Timsort | **0.08** | 0.00 | 0.00 |
+| Miausort v2 (in-place) | 0.14 | 0.01 | 0.01 |
+| Miausort v3 (sqrt n) | 0.14 | 0.01 | 0.01 |
+| Miausort v3 (in-place) | 0.14 | 0.01 | 0.01 |
+| Miausort v2 (sqrt n) | 0.14 | 0.01 | 0.08 |
+| Grailsort (sqrt n) | 1.67 | 0.05 | 0.04 |
+| Grailsort (in-place) | 2.41 | 0.05 | 0.04 |
+
+### gen_reversed_steps
+
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v2 (sqrt n) | **0.15** | 0.01 | 0.00 |
+| Miausort v2 (in-place) | 0.15 | 0.01 | 0.00 |
+| Miausort v3 (in-place) | 0.15 | 0.00 | 0.00 |
+| Miausort v3 (sqrt n) | 0.15 | 0.01 | 0.01 |
+| Timsort | 1.15 | 0.03 | 0.02 |
+| Grailsort (sqrt n) | 2.88 | 0.03 | 0.04 |
+| Grailsort (in-place) | 3.56 | 0.05 | 0.03 |
+
+## List length 10000
+
+### gen_random
+
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v3 (sqrt n) | **15.42** | 0.14 | 0.17 |
+| Timsort | 17.99 | 0.10 | 0.08 |
+| Miausort v3 (in-place) | 23.55 | 0.22 | 0.16 |
+| Grailsort (sqrt n) | 28.19 | 0.10 | 0.09 |
+| Miausort v2 (sqrt n) | 30.11 | 0.14 | 0.50 |
+| Miausort v2 (in-place) | 37.30 | 0.15 | 0.13 |
+| Grailsort (in-place) | 39.86 | 0.23 | 0.52 |
+
+### gen_noisy
+
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v3 (sqrt n) | **9.16** | 0.06 | 0.20 |
+| Timsort | 10.54 | 0.11 | 0.22 |
+| Miausort v3 (in-place) | 12.68 | 0.08 | 0.16 |
+| Grailsort (sqrt n) | 14.50 | 0.07 | 0.20 |
+| Miausort v2 (sqrt n) | 16.30 | 0.10 | 0.09 |
+| Miausort v2 (in-place) | 20.38 | 0.07 | 0.08 |
+| Grailsort (in-place) | 26.99 | 0.22 | 0.14 |
+
+### gen_few_rand
+
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Timsort | **10.75** | 0.06 | 0.05 |
+| Miausort v3 (sqrt n) | 10.90 | 0.15 | 0.08 |
+| Miausort v2 (sqrt n) | 15.77 | 0.10 | 0.07 |
+| Miausort v3 (in-place) | 16.18 | 0.68 | 0.36 |
+| Miausort v2 (in-place) | 19.79 | 0.11 | 0.07 |
+| Grailsort (sqrt n) | 20.98 | 0.12 | 0.08 |
+| Grailsort (in-place) | 34.56 | 1.62 | 0.85 |
+
+### gen_scrambled_head
+
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v3 (sqrt n) | **3.27** | 0.03 | 0.03 |
+| Timsort | 3.35 | 0.07 | 0.05 |
+| Miausort v3 (in-place) | 5.12 | 0.05 | 0.04 |
+| Miausort v2 (sqrt n) | 5.65 | 0.06 | 0.06 |
+| Miausort v2 (in-place) | 10.32 | 0.06 | 0.06 |
+| Grailsort (sqrt n) | 20.36 | 0.42 | 0.25 |
+| Grailsort (in-place) | 33.24 | 0.85 | 0.46 |
+
+### gen_scrambled_tail
+
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v3 (sqrt n) | **3.29** | 0.09 | 0.09 |
+| Timsort | 3.39 | 0.07 | 0.16 |
+| Miausort v2 (sqrt n) | 6.28 | 0.10 | 0.08 |
+| Miausort v3 (in-place) | 6.77 | 0.30 | 0.18 |
+| Miausort v2 (in-place) | 9.16 | 0.23 | 0.15 |
+| Grailsort (sqrt n) | 15.04 | 0.29 | 0.21 |
+| Grailsort (in-place) | 27.82 | 0.27 | 0.35 |
+
+### gen_sqrtn_unique
+
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v3 (sqrt n) | **14.39** | 0.08 | 0.05 |
+| Timsort | 16.60 | 0.06 | 0.04 |
+| Miausort v2 (sqrt n) | 28.44 | 0.98 | 0.51 |
+| Miausort v3 (in-place) | 32.10 | 0.08 | 0.19 |
+| Miausort v2 (in-place) | 37.96 | 0.13 | 0.11 |
+| Grailsort (sqrt n) | 39.98 | 0.15 | 0.21 |
+| Grailsort (in-place) | 49.34 | 1.70 | 1.70 |
+
+### gen_pipe_organ
+
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Timsort | **1.97** | 0.02 | 0.02 |
+| Miausort v3 (sqrt n) | 2.61 | 0.03 | 0.02 |
+| Miausort v2 (sqrt n) | 3.69 | 0.05 | 0.05 |
+| Miausort v3 (in-place) | 4.06 | 0.05 | 0.04 |
+| Miausort v2 (in-place) | 5.13 | 0.08 | 0.06 |
+| Grailsort (sqrt n) | 18.98 | 0.12 | 0.22 |
+| Grailsort (in-place) | 30.33 | 0.38 | 0.57 |
+
+### gen_sorted
+
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v3 (in-place) | **0.47** | 0.02 | 0.01 |
+| Miausort v3 (sqrt n) | 0.48 | 0.01 | 0.01 |
+| Miausort v2 (sqrt n) | 0.48 | 0.02 | 0.01 |
+| Miausort v2 (in-place) | 0.48 | 0.01 | 0.02 |
+| Timsort | 0.49 | 0.02 | 0.01 |
+| Grailsort (sqrt n) | 10.34 | 0.15 | 0.16 |
+| Grailsort (in-place) | 23.03 | 1.17 | 0.61 |
+
+### gen_reversed
+
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Timsort | **0.80** | 0.02 | 0.04 |
+| Miausort v2 (in-place) | 1.49 | 0.03 | 0.07 |
+| Miausort v2 (sqrt n) | 1.49 | 0.02 | 0.13 |
+| Miausort v3 (in-place) | 1.49 | 0.03 | 0.03 |
+| Miausort v3 (sqrt n) | 1.50 | 0.03 | 0.05 |
+| Grailsort (sqrt n) | 18.56 | 0.65 | 0.42 |
+| Grailsort (in-place) | 30.50 | 0.13 | 0.40 |
+
+### gen_reversed_steps
+
+| Algorithm | Median (ms) | IQR | σ |
+|-----------|------------|-----|---|
+| Miausort v3 (in-place) | **1.54** | 0.03 | 0.03 |
+| Miausort v2 (in-place) | 1.54 | 0.02 | 0.02 |
+| Miausort v2 (sqrt n) | 1.54 | 0.02 | 0.02 |
+| Miausort v3 (sqrt n) | 1.56 | 0.04 | 0.02 |
+| Timsort | 13.58 | 0.42 | 0.27 |
+| Grailsort (sqrt n) | 31.51 | 0.11 | 0.15 |
+| Grailsort (in-place) | 44.35 | 0.14 | 0.42 |
