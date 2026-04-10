@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2025 miau
+Copyright (c) 2025-2026 miau
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@ class MiauSort:
     lastUsed = 0
     
     def sqrtPow2(self, n):
-        b = 16
+        b = self.minRun
         while b * b < n - b:
             b *= 2
         return b
@@ -194,7 +194,7 @@ class MiauSort:
                 self.insertLeft(arr, i, self.bSearch(arr, arr[i], a, i, False))
     
     def shellsort(self, arr, start, end): # Only used for sorting buffers since they contain fully distinct values
-        gaps = [6148184740, 2769452586, 1427501165, 561937462, 253124983, 114020263, 51360479, 23135351, 10528127, 4697153, 2131981, 973657, 443557, 197803, 89129, 40354, 18118, 8129, 3659, 1636, 701, 301, 132, 57, 23, 10, 4, 1]
+        gaps = [1073790977, 268460033, 67121153, 16783361, 4197377, 1050113, 262913, 65921, 16577, 4193, 1073, 281, 77, 23, 8, 3, 1]
 
         n = end-start
         for gap in gaps:
@@ -310,8 +310,8 @@ class MiauSort:
         f = a1
         left = arr[t] < arr[midTag]
         for i in range(1, bCount):
-            nxt = a1 + i * bLen
             if left ^ (arr[t + i] < arr[midTag]):
+                nxt = a1 + i * bLen
                 f = self.scrollMerge(arr, f - bLen, f, nxt, left)
                 left = not left
         
@@ -330,7 +330,6 @@ class MiauSort:
                 bufSwaps += 1
         
         self.blockSwap(arr, t + bCount - bufSwaps, buf, bufSwaps)
-        
         self.lastUsed = max(self.lastUsed, bLen)
     
     def lazyMerge(self, arr, a, m, b, left):
@@ -394,7 +393,7 @@ class MiauSort:
             self.lazyMerge(arr, f, b-rem, b, True)
         
         for c in range(midTag+1, t + bCount):
-            if arr[c] <= arr[midTag]:
+            if arr[c] < arr[midTag]:
                 self.insertLeft(arr, c, midTag)
                 midTag += 1
     
@@ -514,7 +513,7 @@ class MiauSort:
                     self.insertRight(arr, rP, kP)
                     kA -= ofs + 1
                     k += 1
-                rP = self.expSearchBW(arr, arr[kP], nxt, rP, False) - 1
+                rP = self.expSearchBW(arr, arr[kP], nxt, rP, True) - 1
             
             if k >= r:
                 for left in range(a, nxt, 2 * r):
@@ -541,12 +540,12 @@ class MiauSort:
         
         self.rotate(arr, kA, kA + k, b)
         
-        if k <= self.smallMerge:
-            l = kA - ((kA - a) & (r - 1))
-            self.buildRuns(arr, l, b, self.minRun)
-            return 0
-        elif k < q:
+        if k < q:
             k = self.floorPow2(k)
+            if k <= self.smallMerge:
+                l = kA - ((kA - a) & (r - 1))
+                self.buildRuns(arr, l, b, self.minRun)
+                return 0
         
         l = kA - ((kA - a) & (r - 1))
         
@@ -743,7 +742,7 @@ class MiauSort:
                 
                 if min(rs - mid, mid - ls) <= self.smallMerge:
                     self.lazyMerge(arr, ls, mid, rs, True)
-                if mid - ls <= bufLen:
+                elif mid - ls <= bufLen:
                     self.mergeFW(arr, ls, mid, rs, buf)
                 elif rs - mid <= bufLen:
                     self.mergeBW(arr, ls, mid, rs, buf)
@@ -896,7 +895,7 @@ class MiauSort:
         
         if a < m:
             if a > p:
-                self.arrCopy(arr, a, arr, p, m - a)
+                self.safeCopy(arr, a, p, m - a)
             self.arrCopy(buf, 0, arr, b - bLen, bLen)
             return
         
