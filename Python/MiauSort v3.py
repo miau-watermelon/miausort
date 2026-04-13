@@ -23,7 +23,7 @@ SOFTWARE.
 """
 
 class MiauSort:
-    smallMerge = 8
+    smallMerge = 16
     minRun = 16
     lastUsed = 0
     
@@ -194,7 +194,7 @@ class MiauSort:
                 self.insertLeft(arr, i, self.bSearch(arr, arr[i], a, i, False))
     
     def shellsort(self, arr, start, end): # Only used for sorting buffers since they contain fully distinct values
-        gaps = [1073790977, 268460033, 67121153, 16783361, 4197377, 1050113, 262913, 65921, 16577, 4193, 1073, 281, 77, 23, 8, 3, 1]
+        gaps = [1073790977, 268460033, 67121153, 16783361, 4197377, 1050113, 262913, 65921, 16577, 4193, 1073, 281, 77, 23, 8, 3, 1] # Modified Sedgewick82
 
         n = end-start
         for gap in gaps:
@@ -231,6 +231,20 @@ class MiauSort:
                     self.swap(arr, i, p)
                     i += 1
                 p += 1
+        return i
+    
+    def scrollMergeGallop(self, arr, p, a, m, left):
+        i = m
+        while True:
+            c = self.expSearchFW(arr, arr[i], a, m, not left) - a
+            self.blockSwap(arr, p, a, c)
+            a += c
+            p += c
+            if a >= m:
+                break
+            self.swap(arr, p, i)
+            i += 1
+            p += 1
         return i
     
     def tailMerge(self, arr, p, a, m, b, bufPos, bLen):
@@ -310,9 +324,12 @@ class MiauSort:
         f = a1
         left = arr[t] < arr[midTag]
         for i in range(1, bCount):
+            nxt = a1 + i * bLen
             if left ^ (arr[t + i] < arr[midTag]):
-                nxt = a1 + i * bLen
-                f = self.scrollMerge(arr, f - bLen, f, nxt, left)
+                if nxt - f <= 8 * bLen:
+                    f = self.scrollMerge(arr, f - bLen, f, nxt, left)
+                else:
+                    f = self.scrollMergeGallop(arr, f - bLen, f, nxt, left)
                 left = not left
         
         if left:
@@ -595,14 +612,11 @@ class MiauSort:
         return k
     
     def redistBuffer(self, arr, a, m, b):
-        L = m - a
-        R = b - m
-        while min(L, R) > self.smallMerge:
+        while True:
             L = m - a
             R = b - m
             
-            fw = (L <= R)
-            if fw:
+            if L <= R:
                 if arr[a] > arr[m + L - 1]:
                     p = self.expSearchFW(arr, arr[a], m + L - 1, b, True)
                     self.rotate(arr, a, m, p)
@@ -633,7 +647,7 @@ class MiauSort:
             
             self.blockSwap(arr, m - d, m, d)
             
-            if fw:
+            if m - d - a <= b - (m + d):
                 self.lazyMerge(arr, a, m - d, m, True)
                 a = m
                 m += d
@@ -641,6 +655,10 @@ class MiauSort:
                 self.lazyMerge(arr, m, m + d, b, True)
                 b = m
                 m -= d
+            
+            if min(m - a, b - m) <= self.smallMerge:
+                break
+        
         self.lazyMerge(arr, a, m, b, True)
     
     def lazyStableSort(self, arr, a, b, built):
@@ -881,6 +899,20 @@ class MiauSort:
                 p += 1
         return i
     
+    def scrollMergeGallopAux(self, arr, p, a, m, left):
+        i = m
+        while True:
+            c = self.expSearchFW(arr, arr[i], a, m, not left) - a
+            self.safeCopy(arr, a, p, c)
+            a += c
+            p += c
+            if a >= m:
+                break
+            arr[p] = arr[i]
+            p += 1
+            i += 1
+        return i
+    
     def tailMergeAux(self, arr, p, a, m, b, buf, bLen):
         i = m
         
@@ -965,7 +997,10 @@ class MiauSort:
         for i in range(2, bCount):
             if left ^ ((tags[i] & 1) == 0):
                 nxt = a + i * bLen
-                f = self.scrollMergeAux(arr, f - bLen, f, nxt, left)
+                if nxt - f <= 8 * bLen:
+                    f = self.scrollMergeAux(arr, f - bLen, f, nxt, left)
+                else:
+                    f = self.scrollMergeGallopAux(arr, f - bLen, f, nxt, left)
                 left = not left
         
         if left:
