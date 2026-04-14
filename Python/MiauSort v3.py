@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 class MiauSort:
+    minGallop = 8
     smallMerge = 16
     minRun = 16
     lastUsed = 0
@@ -326,7 +327,7 @@ class MiauSort:
         for i in range(1, bCount):
             nxt = a1 + i * bLen
             if left ^ (arr[t + i] < arr[midTag]):
-                if nxt - f <= 8 * bLen:
+                if nxt - f <= self.minGallop * bLen:
                     f = self.scrollMerge(arr, f - bLen, f, nxt, left)
                 else:
                     f = self.scrollMergeGallop(arr, f - bLen, f, nxt, left)
@@ -520,9 +521,13 @@ class MiauSort:
         nxt = kA - ((kA - a) & (r - 1)) # Initialise next run start as start of last run
         
         while nxt >= a and k < q: # Search until start is reached or keys meet target
+            while nxt > a and arr[nxt - 1] <= arr[nxt]:
+                nxt -= r
+            
             kP = kA + k - 1
             while rP >= nxt and k < q:
-                kP = self.expSearchBW(arr, arr[rP], kA, kP + 1, False) - 1
+                while kP >= kA and arr[kP] > arr[rP]: # Linear search is faster for keys
+                    kP -= 1
                 if kP < kA or arr[kP] != arr[rP]:
                     self.rotate(arr, rP + 1, kA, kA + k)
                     ofs = kA - rP - 1
@@ -532,26 +537,26 @@ class MiauSort:
                     k += 1
                 rP = self.expSearchBW(arr, arr[kP], nxt, rP, True) - 1
             
-            if k >= r:
-                for left in range(a, nxt, 2 * r):
-                    mid = left + r
-                    right = min(left + 2 * r, nxt)
+                if k >= r:
+                    for left in range(a, nxt, 2 * r):
+                        mid = left + r
+                        right = min(left + 2 * r, nxt)
+                        
+                        if mid >= right:
+                            break
+                        
+                        ls, rs = self.shrinkBounds(arr, left, mid, right)
+                        if ls < 0:
+                            continue
+                        
+                        if mid - ls <= rs - mid:
+                            self.mergeFW(arr, ls, mid, rs, kA)
+                        else:
+                            self.mergeBW(arr, ls, mid, rs, kA)
                     
-                    if mid >= right:
-                        break
-                    
-                    ls, rs = self.shrinkBounds(arr, left, mid, right)
-                    if ls < 0:
-                        continue
-                    
-                    if mid - ls <= rs - mid:
-                        self.mergeFW(arr, ls, mid, rs, kA)
-                    else:
-                        self.mergeBW(arr, ls, mid, rs, kA)
-                
-                self.shellsort(arr, kA, kA + self.lastUsed)
-                self.lastUsed = 0
-                r *= 2
+                    self.shellsort(arr, kA, kA + self.lastUsed)
+                    self.lastUsed = 0
+                    r *= 2
             
             nxt -= ((nxt - a - 1) & (r - 1)) + 1
         
@@ -612,10 +617,9 @@ class MiauSort:
         return k
     
     def redistBuffer(self, arr, a, m, b):
-        while True:
-            L = m - a
-            R = b - m
-            
+        L = m - a
+        R = b - m
+        while min(L, R) > self.smallMerge:
             if L <= R:
                 if arr[a] > arr[m + L - 1]:
                     p = self.expSearchFW(arr, arr[a], m + L - 1, b, True)
@@ -656,8 +660,8 @@ class MiauSort:
                 b = m
                 m -= d
             
-            if min(m - a, b - m) <= self.smallMerge:
-                break
+            L = m - a
+            R = b - m
         
         self.lazyMerge(arr, a, m, b, True)
     
@@ -997,7 +1001,7 @@ class MiauSort:
         for i in range(2, bCount):
             if left ^ ((tags[i] & 1) == 0):
                 nxt = a + i * bLen
-                if nxt - f <= 8 * bLen:
+                if nxt - f <= self.minGallop * bLen:
                     f = self.scrollMergeAux(arr, f - bLen, f, nxt, left)
                 else:
                     f = self.scrollMergeGallopAux(arr, f - bLen, f, nxt, left)
@@ -1008,7 +1012,7 @@ class MiauSort:
         else:
             self.tailMergeAux(arr, f - bLen, f, f, b, buf, bLen)
     
-    def sortAux(self, arr, a, b, mem):
+    def sortAux(self, arr, a, b):
         n = b - a
         
         if n < 2 * self.minRun:
@@ -1020,28 +1024,11 @@ class MiauSort:
             self.lazyStableSort(arr, a, b, False)
             return
         
-        if self.buildRuns(arr, 0, n, self.minRun):
-            return
+        bLen = self.sqrtPow2(n)
+        tLen = n // bLen
         
-        if mem < n // 2:
-            bLen = self.sqrtPow2(n)
-            
-            if mem < bLen: # If memory is insufficient, return to sorting in-place
-                self.sortInPlace(arr, a, b)
-                return
-            
-            while bLen < mem:
-                bLen *= 2
-            
-            tLen = n // bLen
-            
-            buf = [0] * bLen
-            tags = [0] * tLen
-        else:
-            bLen = min(mem, n)
-            if bLen < n:
-                bLen = n // 2
-            buf = [0] * bLen
+        buf = [0] * bLen
+        tags = [0] * tLen
         
         N = self.minRun
         
