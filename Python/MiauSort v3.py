@@ -24,12 +24,12 @@ SOFTWARE.
 
 class MiauSort:
     minGallop = 8
-    smallMerge = 16
+    smallMerge = 8
     minRun = 16
     lastUsed = 0
     
     def sqrtPow2(self, n):
-        b = self.minRun
+        b = 16
         while b * b < n - b:
             b *= 2
         return b
@@ -157,7 +157,6 @@ class MiauSort:
         b = m - 1
         c = m
         d = e - 1
-        
         while a < b and c < d: # Cycle reversal rotation (very fast on average)
             tmp = arr[b]
             arr[b] = arr[a]
@@ -168,7 +167,6 @@ class MiauSort:
             c += 1
             arr[d] = tmp
             d -= 1
-        
         while a < b:
             tmp = arr[b]
             arr[b] = arr[a]
@@ -185,9 +183,7 @@ class MiauSort:
             d -= 1
             arr[a] = tmp
             a += 1
-        
-        if a < d:
-            self.reverse(arr, a, d+1)
+        self.reverse(arr, a, d+1)
     
     def bSort(self, arr, a, b, h):
         for i in range(h, b):
@@ -195,7 +191,7 @@ class MiauSort:
                 self.insertLeft(arr, i, self.bSearch(arr, arr[i], a, i, False))
     
     def shellsort(self, arr, start, end): # Only used for sorting buffers since they contain fully distinct values
-        gaps = [1073790977, 268460033, 67121153, 16783361, 4197377, 1050113, 262913, 65921, 16577, 4193, 1073, 281, 77, 23, 8, 3, 1] # Modified Sedgewick82
+        gaps = [6148184740, 2769452586, 1427501165, 561937462, 253124983, 114020263, 51360479, 23135351, 10528127, 4697153, 2131981, 973657, 443557, 197803, 89129, 40354, 18118, 8129, 3659, 1636, 701, 301, 132, 57, 23, 10, 4, 1]
 
         n = end-start
         for gap in gaps:
@@ -348,6 +344,7 @@ class MiauSort:
                 bufSwaps += 1
         
         self.blockSwap(arr, t + bCount - bufSwaps, buf, bufSwaps)
+        
         self.lastUsed = max(self.lastUsed, bLen)
     
     def lazyMerge(self, arr, a, m, b, left):
@@ -411,7 +408,7 @@ class MiauSort:
             self.lazyMerge(arr, f, b-rem, b, True)
         
         for c in range(midTag+1, t + bCount):
-            if arr[c] < arr[midTag]:
+            if arr[c] <= arr[midTag]:
                 self.insertLeft(arr, c, midTag)
                 midTag += 1
     
@@ -520,13 +517,10 @@ class MiauSort:
         rP = b - 2
         nxt = kA - ((kA - a) & (r - 1)) # Initialise next run start as start of last run
         
-        while nxt >= a and k < q: # Search until start is reached or keys meet target
-            while nxt > a and arr[nxt - 1] <= arr[nxt]:
-                nxt -= r
-            
+        while nxt >= a and k < q: # Search until start is reached or keys meet target            
             kP = kA + k - 1
             while rP >= nxt and k < q:
-                while kP >= kA and arr[kP] > arr[rP]: # Linear search is faster for keys
+                while kP >= kA and arr[kP] > arr[rP]:
                     kP -= 1
                 if kP < kA or arr[kP] != arr[rP]:
                     self.rotate(arr, rP + 1, kA, kA + k)
@@ -564,7 +558,7 @@ class MiauSort:
         
         if k < q:
             k = self.floorPow2(k)
-            if k <= self.smallMerge:
+            if k <= self.minRun:
                 l = kA - ((kA - a) & (r - 1))
                 self.buildRuns(arr, l, b, self.minRun)
                 return 0
@@ -628,6 +622,7 @@ class MiauSort:
                     a += d + 1
                     m += d
                     L -= 1
+                    R -= d
                     continue
             else:
                 if arr[b - 1] < arr[m - R]:
@@ -636,6 +631,7 @@ class MiauSort:
                     d = m - p
                     b -= d + 1
                     m -= d
+                    L -= d
                     R -= 1
                     continue
             
@@ -764,7 +760,7 @@ class MiauSort:
                 
                 if min(rs - mid, mid - ls) <= self.smallMerge:
                     self.lazyMerge(arr, ls, mid, rs, True)
-                elif mid - ls <= bufLen:
+                if mid - ls <= bufLen:
                     self.mergeFW(arr, ls, mid, rs, buf)
                 elif rs - mid <= bufLen:
                     self.mergeBW(arr, ls, mid, rs, buf)
@@ -1024,9 +1020,11 @@ class MiauSort:
             self.lazyStableSort(arr, a, b, False)
             return
         
+        if self.buildRuns(arr, 0, n, self.minRun):
+            return
+        
         bLen = self.sqrtPow2(n)
         tLen = n // bLen
-        
         buf = [0] * bLen
         tags = [0] * tLen
         
