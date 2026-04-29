@@ -11,7 +11,7 @@ In development, but currently has the following features:
 - Galloping with more optimized heuristics
 
 Currently working on:
-- Porting to more practical languages (Java, C, Rust)
+- Porting to more languages (C, Rust)
 
 Acknowledgements:
 - Amari [(double-a git)](https://git.a-a.dev/amari) for ideas from Helium Sort, and for the development of [UniV](https://git.a-a.dev/amari/UniV), the visualizer I used for the majority of this algorithm's development.
@@ -21,3 +21,6 @@ Acknowledgements:
 
 # Python benchmarks:
 Now [here](https://github.com/miau-watermelon/miausort/blob/main/Python/benchmarks.md). Keep in mind that Python isn't the most reliable, even if I tried to mitigate this by taking medians and disabling the garbage collector.
+
+# Java
+Miau Sort's O(sqrt n) strategy has now been ported to Java!
