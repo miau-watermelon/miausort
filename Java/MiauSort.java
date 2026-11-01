@@ -3,6 +3,7 @@ MIT License
 
 Copyright (c) 2013 Andrey Astrelin
 Copyright (c) 2020 Amari Calipso
+Copyright (c) 2026 bzyjin
 Copyright (c) 2025-2026 miau
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -48,8 +49,14 @@ public class MiauSort<T extends Comparable<? super T>> {
     }
 
     private void insertLeft(T[] array, int a, int b) {
+    	if (a <= b) return;
         T tmp = array[a];
-        System.arraycopy(array, b, array, b + 1, a - b);
+        switch (a-b) {
+        	case 2: array[b+2] = array[b+1];
+        	case 1: array[b+1] = array[b];
+    				break;
+        	default: System.arraycopy(array, b, array, b + 1, a - b);
+        }
         array[b] = tmp;
     }
 
@@ -146,8 +153,7 @@ public class MiauSort<T extends Comparable<? super T>> {
     }
 
     private int binarySearch(T[] array, int base, int length, T target, boolean left) {
-    	if (length <= 0)
-    		return base;
+    	if (length < 1) return base;
         while (length > 0) {
             int mid = length >> 1;
             int cmp = array[base + mid].compareTo(target);
@@ -162,8 +168,7 @@ public class MiauSort<T extends Comparable<? super T>> {
     }
 
     private int expSearchFW(T[] array, int base, int length, T target, boolean left) {
-        if (length <= 0)
-            return base;
+        if (length < 1) return base;
         int tieBreak = left ? 0 : 1;
         int ofs = 1,
             lastOfs = 0;
@@ -177,8 +182,7 @@ public class MiauSort<T extends Comparable<? super T>> {
     }
 
     private int expSearchBW(T[] array, int base, int length, T target, boolean left) {
-        if (length <= 0)
-            return base;
+        if (length <= 0) return base;
         int tieBreak = left ? -1 : 0;
         int end = base + length - 1;
         int ofs = 1,
@@ -193,6 +197,7 @@ public class MiauSort<T extends Comparable<? super T>> {
     }
 
     private int[] shrinkBounds(T[] array, int base, int leftLen, int rightLen, T[] buffer) {
+    	if (leftLen < 1 || rightLen < 1) return new int[] {-1, 0, 0};
         int mid = base + leftLen;
         if (array[mid - 1].compareTo(array[mid]) <= 0)
             return new int[] {-1, 0, 0};
@@ -269,31 +274,120 @@ public class MiauSort<T extends Comparable<? super T>> {
     }
 
     private void mergeFromFW(T[] array, int base, int leftLen, int rightLen, T[] buffer, int bufBase) {
-        int mid = base + leftLen;
-        int i = 0, j = 0;
-        while (i < leftLen && j < rightLen) {
-            if (buffer[bufBase + i].compareTo(array[mid + j]) <= 0) {
-                array[base++] = buffer[bufBase + (i++)];
-            } else {
-                array[base++] = array[mid + (j++)];
-            }
-        }
-        System.arraycopy(buffer, bufBase + i, array, base, leftLen - i);
+    	if (leftLen < 1) return;
+    	if (rightLen < 1) {
+    		System.arraycopy(buffer, bufBase, array, base, leftLen);
+    		return;
+    	}
+    	int mid = base + leftLen;
+    	int t = Math.max(MIN_GALLOP, 31 - Integer.numberOfLeadingZeros(leftLen + rightLen));
+    	
+    	outer: while (true) {
+    		int c1 = 0,
+				c2 = 0;
+    		
+    		do {
+    			if (buffer[bufBase].compareTo(array[mid]) <= 0) {
+    				array[base++] = buffer[bufBase++];
+    				++c1;
+    				c2 = 0;
+    				if (--leftLen < 1) break outer;
+    			} else {
+    				array[base++] = array[mid++];
+    				++c2;
+    				c1 = 0;
+    				if (--rightLen < 1) break outer;
+    			}
+    		} while ((c1 | c2) <= t);
+    		
+    		do {
+    			c1 = expSearchFW(buffer, bufBase, leftLen, array[mid], false) - bufBase;
+    			if (c1 > 0) {
+    				System.arraycopy(buffer, bufBase, array, base, c1);
+    				bufBase += c1;
+    				base += c1;
+    				leftLen -= c1;
+    				if (leftLen < 1) break outer;
+    			}
+    			
+    			array[base++] = array[mid++];
+    			if (--rightLen < 1) break outer;
+    			
+    			c2 = expSearchFW(array, mid, rightLen, buffer[bufBase], true) - mid;
+    			if (c2 > 0) {
+    				System.arraycopy(array, mid, array, base, c2);
+    				mid += c2;
+    				base += c2;
+    				rightLen -= c2;
+    				if (rightLen < 1) break outer;
+    			}
+    			
+    			array[base++] = buffer[bufBase++];
+    			if (--leftLen < 1) break outer;
+    		} while (c1 > t || c2 > t);
+    	}
+    	if (leftLen > 0) System.arraycopy(buffer, bufBase, array, base, leftLen);
     }
 
-    private void mergeFromBW(T[] array, int base, int leftLen, int rightLen, T[] buffer, int bufBase) {
-        int mid = base + leftLen - 1,
-            end = base + leftLen + rightLen - 1,
-            bufEnd = bufBase + rightLen - 1;
-        int i = 0, j = 0;
-        while (i < leftLen && j < rightLen) {
-            if (buffer[bufEnd - j].compareTo(array[mid - i]) >= 0) {
-                array[end--] = buffer[bufEnd - (j++)];
-            } else {
-                array[end--] = array[mid - (i++)];
-            }
-        }
-        System.arraycopy(buffer, bufBase, array, end - (rightLen - j) + 1, rightLen - j);
+    private void mergeFromBW(T[] array, int base, int leftLen, int rightLen, T[] buffer, int bufBase, boolean left) {
+    	if (rightLen < 1) return;
+    	if (leftLen < 1) {
+    		System.arraycopy(buffer, bufBase, array, base, rightLen);
+    		return;
+    	}
+    	
+    	int mid = base + leftLen - 1,
+    		end = base + leftLen + rightLen - 1,
+    		bufEnd = bufBase + rightLen - 1;
+    	
+    	int t = Math.max(MIN_GALLOP, 31 - Integer.numberOfLeadingZeros(leftLen + rightLen));
+    	
+    	outer: while (true) {
+    		int c1 = 0,
+				c2 = 0;
+    		
+    		do {
+    			int cmp = buffer[bufEnd].compareTo(array[mid]);
+    			if (cmp > 0 || (left && cmp == 0)) {
+    				array[end--] = buffer[bufEnd--];
+    				++c2;
+    				c1 = 0;
+    				if (--rightLen < 1) break outer;
+    			} else {
+    				array[end--] = array[mid--];
+    				++c1;
+    				c2 = 0;
+    				if (--leftLen < 1) break outer;
+    			}
+    		} while ((c1 | c2) <= t);
+    		
+    		do {
+    			c2 = bufEnd+1 - expSearchBW(buffer, bufBase, rightLen, array[mid], left);
+    			if (c2 > 0) {
+    				bufEnd -= c2;
+    				rightLen -= c2;
+    				end -= c2;
+    				System.arraycopy(buffer, bufEnd+1, array, end+1, c2);
+    				if (rightLen < 1) break outer;
+    			}
+    			
+    			array[end--] = array[mid--];
+    			if (--leftLen < 1) break outer;
+    			
+    			c1 = mid+1 - expSearchBW(array, base, leftLen, buffer[bufEnd], !left);
+    			if (c1 > 0) {
+    				mid -= c1;
+    				leftLen -= c1;
+    				end -= c1;
+    				System.arraycopy(array, mid+1, array, end+1, c1);
+    				if (leftLen < 1) break outer; 
+    			}
+    			
+    			array[end--] = buffer[bufEnd--];
+    			if (--rightLen < 1) break outer;
+    		} while (c1 > t || c2 > t);
+    	}
+    	if (rightLen > 0) System.arraycopy(buffer, bufBase, array, end-rightLen+1, rightLen);
     }
 
     private void merge(T[] array, int base, int leftLen, int rightLen, T[] buffer) {
@@ -308,62 +402,89 @@ public class MiauSort<T extends Comparable<? super T>> {
             mergeFromFW(array, base, leftLen, rightLen, buffer, 0);
         } else {
             System.arraycopy(array, base + leftLen, buffer, 0, rightLen);
-            mergeFromBW(array, base, leftLen, rightLen, buffer, 0);
+            mergeFromBW(array, base, leftLen, rightLen, buffer, 0, true);
         }
     }
 
     private void mergeTo(T[] array, int base, int leftLen, int rightLen, T[] buffer, int bufBase) {
         int mid = base + leftLen;
-        while (leftLen > 0 && rightLen > 0) {
-            if (array[base].compareTo(array[mid]) <= 0) {
-                buffer[bufBase++] = array[base++];
-                leftLen--;
-            } else {
-                buffer[bufBase++] = array[mid++];
-                rightLen--;
-            }
+        
+        int t = Math.max(MIN_GALLOP, 31 - Integer.numberOfLeadingZeros(leftLen + rightLen));
+        
+        outer: while (true) {
+        	int c1 = 0,
+    			c2 = 0;
+        	do {
+	        	if (array[base].compareTo(array[mid]) <= 0) {
+	        		buffer[bufBase++] = array[base++];
+	        		++c1;
+	        		c2 = 0;
+	        		if (--leftLen < 1) break outer;
+	        	} else {
+	        		buffer[bufBase++] = array[mid++];
+	        		++c2;
+	        		c1 = 0;
+	        		if (--rightLen < 1) break outer;
+	        	}
+        	} while ((c1 | c2) <= t);
+        	
+        	do {
+        		c1 = expSearchFW(array, base, leftLen, array[mid], false) - base;
+        		if (c1 > 0) {
+        			System.arraycopy(array, base, buffer, bufBase, c1);
+        			base += c1;
+        			bufBase += c1;
+        			leftLen -= c1;
+        			if (leftLen < 1) break outer;
+        		}
+        		
+        		buffer[bufBase++] = array[mid++];
+        		if (--rightLen < 1) break outer;
+        		
+        		c2 = expSearchFW(array, mid, rightLen, array[base], true) - mid;
+        		if (c2 > 0) {
+        			System.arraycopy(array, mid, buffer, bufBase, c2);
+        			mid += c2;
+        			bufBase += c2;
+        			rightLen -= c2;
+        			if (rightLen < 1) break outer;
+        		}
+        		
+        		buffer[bufBase++] = array[base++];
+        		if (--leftLen < 1) break outer;
+        	} while (c1 > t || c2 > t);
         }
-        System.arraycopy(array, base, buffer, bufBase, leftLen);
-        bufBase += leftLen;
-        System.arraycopy(array, mid, buffer, bufBase, rightLen);
+        if (leftLen > 0) System.arraycopy(array, base, buffer, bufBase, leftLen);
+        else System.arraycopy(array, mid, buffer, bufBase, rightLen);
     }
 
     private void mergeFour(T[] array, int base, int W, int X, int Y, int Z, T[] buffer) {
-        int a = base;
-        int b = a + W;
-        int c = b + X;
-        int d = c + Y;
-
-        int midL = a + W / 2,
-            midR = d + Z / 2;
+    	assert W+X >= Y+Z: "Left subarray pair must be larger than or equal to right pair!";
+        int base1 = base + W + X;
         
-        boolean shrinkL = (array[midL].compareTo(array[b]) <= 0),
-                shrinkR = (array[d - 1].compareTo(array[midR]) <= 0);
+        boolean skipL = array[base+W-1].compareTo(array[base+W]) <= 0,
+        		skipR = array[base1+Y-1].compareTo(array[base1+Y]) <= 0;
         
-        if (shrinkL && shrinkR) {
-            merge(array, a, W, X, buffer);
-            merge(array, c, Y, Z, buffer);
-            merge(array, a, W + X, Y + Z, buffer);
-            return;
+        if (skipL && skipR) {
+        	merge(array, base, W+X, Y+Z, buffer);
+        	return;
         }
-
-        if (shrinkL) {
-            merge(array, a, W, X, buffer);
-            mergeTo(array, c , Y, Z, buffer, 0);
-            mergeFromBW(array, a, W + X, Y + Z, buffer, 0);
-            return;
+        
+        if (skipL) {
+        	mergeTo(array, base1, Y, Z, buffer, 0);
+        	mergeFromBW(array, base, W+X, Y+Z, buffer, 0, true);
+        	return;
         }
-
-        if (shrinkR) {
-            merge(array, c, Y, Z, buffer);
-            mergeTo(array, a, W, X, buffer, 0);
-            mergeFromFW(array, a, W + X, Y + Z, buffer, 0);
-            return;
+        
+        if (skipR) {
+        	mergeTo(array, base, W, X, buffer, 0);
+        	mergeFromFW(array, base, W+X, Y+Z, buffer, 0);
+        	return;
         }
-
-        mergeTo(array, a, W, X, buffer, 0);
-        mergeTo(array, c, Y, Z, buffer, W + X);
-        mergeTo(buffer, 0, W + X, Y + Z, array, a);
+        
+        mergeTo(array, base, W, X, buffer, 0);
+        mergeTo(array, base1, Y, Z, array, base);
+        mergeFromBW(array, base, Y+Z, W+X, buffer, 0, false);
     }
 
     private void smallMergeSort(T[] array, int base, int length, int minRun) {
@@ -374,9 +495,9 @@ public class MiauSort<T extends Comparable<? super T>> {
         @SuppressWarnings("unchecked")
         T[] buffer = (T[]) java.lang.reflect.Array.newInstance(array.getClass().getComponentType(), half);
         int size = minRun;
-        while (size * 4 <= half) {
+        while (size <= half / 2) {
             int mergeOfs = 0;
-            while (mergeOfs + 4 * size <= length) {
+            while (mergeOfs <= length - 4 * size) {
                 mergeFour(array, base + mergeOfs, size, size, size, size, buffer);
                 mergeOfs += 4 * size;
             }
@@ -385,8 +506,8 @@ public class MiauSort<T extends Comparable<? super T>> {
                 mergeFour(array, base + mergeOfs, size, size, size, remSize, buffer);
             } else if (mergeOfs + 2 * size < length) {
                 int remSize = length - (mergeOfs + 2 * size);
-                merge(array, base + mergeOfs + size, size, remSize, buffer);
-                merge(array, base + mergeOfs, size, size + remSize, buffer);
+                mergeTo(array, base + mergeOfs + size, size, remSize, buffer, 0);
+                mergeFromBW(array, base + mergeOfs, size, size + remSize, buffer, 0, true);
             } else if (mergeOfs + size < length) {
                 int remSize = length - (mergeOfs + size);
                 merge(array, base + mergeOfs, size, remSize, buffer);
@@ -407,36 +528,51 @@ public class MiauSort<T extends Comparable<? super T>> {
         }
     }
 
-    private int scrollMerge(T[] array, int hole, int start, int mid, boolean left) {
-        int i = mid;
-        while (start < mid) {
-            int cmp = array[start].compareTo(array[i]);
-            if (cmp < 0 || (left && cmp == 0)) {
-                array[hole++] = array[start++];
-            } else {
-                array[hole++] = array[i++];
-            }
-        }
-        return i;
-    }
-
-    private int scrollMergeGallop(T[] array, int hole, int start, int mid, boolean left) {
+    private int scrollMerge(T[] array, int hole, int start, int mid, int end, boolean left) {
+        int t = Math.max(MIN_GALLOP, 31 - Integer.numberOfLeadingZeros(end - start));
         int i = mid;
         while (true) {
-            int count = expSearchFW(array, start, mid - start, array[i], !left) - start;
-            System.arraycopy(array, start, array, hole, count);
-            start += count;
-            hole += count;
-            if (start >= mid)
-                break;
-            do {
-                array[hole++] = array[i++];
-            } while (array[start].compareTo(array[i]) > (left ? 0 : -1));
-            array[hole++] = array[start++];
-            if (start >= mid)
-            	break;
+        	int c1 = 0,
+    			c2 = 0;
+        	do {
+        		int cmp = array[start].compareTo(array[i]);
+        		if (cmp < 0 || (left && cmp == 0)) {
+        			array[hole++] = array[start++];
+        			++c1;
+        			c2 = 0;
+        			if (start >= mid) return i;
+        		} else {
+        			array[hole++] = array[i++];
+        			++c2;
+        			c1 = 0;
+        			if (i >= end) throw new IllegalArgumentException("Comparison method violates its general contract!");
+        		}
+        	} while ((c1 | c2) <= t);
+        	
+        	do {
+        		c1 = expSearchFW(array, start, mid-start, array[i], !left) - start;
+        		if (c1 > 0) {
+        			System.arraycopy(array, start, array, hole, c1);
+        			start += c1;
+        			hole += c1;
+        			if (start >= mid) return i;
+        		}
+        		
+        		array[hole++] = array[i++];
+        		if (i >= end) throw new IllegalArgumentException("Comparison method violates its general contract!");
+        		
+        		c2 = expSearchFW(array, i, end-i, array[start], left) - i;
+        		if (c2 > 0) {
+        			System.arraycopy(array, i, array, hole, c2);
+        			i += c2;
+        			hole += c2;
+        			if (i >= end) throw new IllegalArgumentException("Comparison method violates its general contract!");
+        		}
+        		
+        		array[hole++] = array[start++];
+        		if (start >= mid) return i;
+        	} while (c1 > t || c2 > t);
         }
-        return i;
     }
 
     private void tailMerge(T[] array, int hole, int start, int mid, int end, T[] buffer, int blockLen) {
@@ -454,46 +590,20 @@ public class MiauSort<T extends Comparable<? super T>> {
     		System.arraycopy(buffer, 0, array, end - blockLen, blockLen);
     		return;
     	}
-    	int a = 0;
-    	if (end - i <= MIN_GALLOP * blockLen) {
-    		while (a < blockLen && i < end) {
-    			if (buffer[a].compareTo(array[i]) <= 0) {
-    				array[hole++] = buffer[a++];
-    			} else {
-    				array[hole++] = array[i++];
-    			}
-    		}
-    	} else {
-    		while (true) {
-    			while (a < blockLen && buffer[a].compareTo(array[i]) <= 0) {
-    				array[hole++] = buffer[a++];
-    			}
-    			if (a >= blockLen)
-    				break;
-    			array[hole++] = array[i++];
-    			if (i >= end)
-    				break;
-    			int count = expSearchFW(array, i, end - i, buffer[a], true) - i;
-    			System.arraycopy(array, i, array, hole, count);
-    			i += count;
-    			hole += count;
-    			if (i >= end)
-    				break;
-    			array[hole++] = buffer[a++];
-    			if (a >= blockLen)
-    				break;
-    		}
-    	}
-    	System.arraycopy(buffer, a, array, hole, blockLen - a);
+    	
+    	mergeFromFW(array, hole, blockLen, end-i, buffer, 0);
     }
 
-    private void blockCycle(T[] array, int base, int leftCount, int rightCount, int blockLen, int[] indices, T[] buffer) {
-        indices[0] = (leftCount - 1) << 1;
-        int left = 0,
+    private void getIndices(T[] array, int base, int leftCount, int rightCount, int blockLen, int[] indices) {
+        int left = leftCount - 1,
             mid = leftCount,
             right = leftCount,
             end = leftCount + rightCount,
-            out = 1;
+            out = 0;
+        while (right < end && array[base + (left + 1) * blockLen - 1].compareTo(array[base + (right + 1) * blockLen - 1]) > 0)
+        	indices[out++] = ((right++) << 1) | 1;
+        indices[out++] = left << 1;
+        left = 0;
         while (left < mid - 1 && right < end) {
             if (array[base + (left + 1) * blockLen - 1].compareTo(array[base + (right + 1) * blockLen - 1]) <= 0) {
                 indices[out++] = (left++) << 1;
@@ -507,10 +617,13 @@ public class MiauSort<T extends Comparable<? super T>> {
         while (right < end) {
             indices[out++] = ((right++) << 1) | 1;
         }
+    }
+    
+    private void blockCycle(T[] array, int base, int leftCount, int rightCount, int blockLen, int[] indices, int buf) {
         int total = leftCount + rightCount;
         for (int i = 0; i < total; i++) {
             if (indices[i] >> 1 != i) {
-                System.arraycopy(array, base + i * blockLen, buffer, 0, blockLen);
+                System.arraycopy(array, base + i * blockLen, array, buf, blockLen);
                 int j = i;
                 int nxt = (indices[i] >> 1);
                 do {
@@ -519,15 +632,15 @@ public class MiauSort<T extends Comparable<? super T>> {
                     j = nxt;
                     nxt = (indices[nxt] >> 1);
                 } while (nxt != i);
-                System.arraycopy(buffer, 0, array, base + j * blockLen, blockLen);
+                System.arraycopy(array, buf, array, base + j * blockLen, blockLen);
                 indices[j] = (j << 1) | (indices[j] & 1);
             }
         }
     }
 
     private void blockMerge(T[] array, int base, int leftLen, int rightLen, int blockLen, int[] indices, T[] buffer) {
-    	if (leftLen < blockLen || rightLen < blockLen) throw new IllegalArgumentException("Subarrays are too small for block merging!");
-        if (leftLen % blockLen != 0) throw new IllegalArgumentException("Left subarray must be multiple of block length!");
+    	assert leftLen > blockLen && rightLen > blockLen: "Subarrays are too small for block merging!";
+        assert leftLen % blockLen == 0: "Left subarray must be multiple of block length!";
         
         int end = base + leftLen + rightLen;
         int leftCount = leftLen / blockLen,
@@ -535,20 +648,17 @@ public class MiauSort<T extends Comparable<? super T>> {
         int blockCount = leftCount + rightCount,
             rem = rightLen - (rightCount * blockLen);
         
-        blockCycle(array, base, leftCount, rightCount, blockLen, indices, buffer);
-        System.arraycopy(array, base, buffer, 0, blockLen);
+        System.arraycopy(array, base + (leftCount - 1) * blockLen, buffer, 0, blockLen);
+        System.arraycopy(array, base, array, base + (leftCount - 1) * blockLen, blockLen);
+        getIndices(array, base + blockLen, leftCount - 1, rightCount, blockLen, indices);
+        blockCycle(array, base + blockLen, leftCount - 1, rightCount, blockLen, indices, base);
 
         int frag = base + blockLen;
-        boolean left = ((indices[1] & 1) == 0);
-        for (int i = 2; i < blockCount; i++) {
+        boolean left = ((indices[0] & 1) == 0);
+        for (int i = 1; i < blockCount - 1; i++) {
             if (left ^ ((indices[i] & 1) == 0)) {
-                int nxt = base + i * blockLen;
-                if (nxt - frag <= MIN_GALLOP * blockLen) {
-                    frag = scrollMerge(array, frag - blockLen, frag, nxt, left);
-                } else {
-                    frag = scrollMergeGallop(array, frag - blockLen, frag, nxt, left);
-                }
-                if (frag > nxt + blockLen) throw new IllegalArgumentException("Comparison method violates its general contract!");
+                int nxt = base + (i+1) * blockLen;
+                frag = scrollMerge(array, frag - blockLen, frag, nxt, nxt + blockLen, left);
                 left = !left;
             }
         }
@@ -562,26 +672,25 @@ public class MiauSort<T extends Comparable<? super T>> {
         int mergeBase = bnd[0],
     		mergeLeft = bnd[1],
     		mergeRight = bnd[2];
-
-        if (mergeLeft > blockLen && mergeBase != base) {
-            int diff = (mergeBase - base) % blockLen;
-            mergeBase -= diff;
-            mergeLeft += diff;
-        }
-
+    	
         if (mergeLeft <= mergeRight && mergeLeft <= blockLen) {
             System.arraycopy(array, mergeBase, buffer, 0, mergeLeft);
             mergeFromFW(array, mergeBase, mergeLeft, mergeRight, buffer, 0);
         } else if (mergeRight <= blockLen) {
             System.arraycopy(array, mergeBase + mergeLeft, buffer, 0, mergeRight);
-            mergeFromBW(array, mergeBase, mergeLeft, mergeRight, buffer, 0);
+            mergeFromBW(array, mergeBase, mergeLeft, mergeRight, buffer, 0, true);
         } else {
+        	if (mergeBase > base) {
+	        	int diff = (mergeBase - base) % blockLen;
+	            mergeBase -= diff;
+	            mergeLeft += diff;
+        	}
             blockMerge(array, mergeBase, mergeLeft, mergeRight, blockLen, indices, buffer);
         }
     }
 
     public void sort(T[] array, int base, int length) {
-        if (array == null || length <= 1)
+        if (array == null || length < 2)
             return;
 
         int minRun = length;
@@ -611,11 +720,11 @@ public class MiauSort<T extends Comparable<? super T>> {
         
         @SuppressWarnings("unchecked")
         T[] buffer = (T[]) java.lang.reflect.Array.newInstance(array.getClass().getComponentType(), blockLen);
-        int[] indices = new int [blockCount];
+        int[] indices = new int[blockCount];
 
         int size = minRun;
 
-        while (size * 4 <= blockLen) {
+        while (size * 2 <= blockLen) {
             int mergeOfs = 0;
             while (mergeOfs + 4 * size <= length) {
                 mergeFour(array, base + mergeOfs, size, size, size, size, buffer);
@@ -626,8 +735,8 @@ public class MiauSort<T extends Comparable<? super T>> {
                 mergeFour(array, base + mergeOfs, size, size, size, remSize, buffer);
             } else if (mergeOfs + 2 * size < length) {
                 int remSize = length - (mergeOfs + 2 * size);
-                merge(array, base + mergeOfs + size, size, remSize, buffer);
-                merge(array, base + mergeOfs, size, size + remSize, buffer);
+                mergeTo(array, base + mergeOfs + size, size, remSize, buffer, 0);
+                mergeFromBW(array, base + mergeOfs, size, size + remSize, buffer, 0, true);
             } else if (mergeOfs + size < length) {
                 int remSize = length - (mergeOfs + size);
                 merge(array, base + mergeOfs, size, remSize, buffer);
