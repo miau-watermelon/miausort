@@ -1,4 +1,16 @@
 Benchmark in comparison to `Arrays.sort()` on an object array.
+
+---
+
+## Key:
+|Input name|Description|
+|:---:|:---:|
+| `RANDOM` | Random shuffle of objects with values in interval [0:n) |
+| `SAWTOOTH` | Four sorted runs of equal size |
+| `SORTED` | Sorted array containing with values in interval [0:n) |
+| `REVERSED` | Reverse-sorted array |
+| `REVERSED_SEGMENTS` | Reverse-sorted array with n/4 distinct values |
+
 ```
 # Run complete. Total time: 00:13:14
 
